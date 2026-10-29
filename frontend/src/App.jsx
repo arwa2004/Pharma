@@ -7,6 +7,7 @@ import Medicaments from "./pages/Medicaments.jsx";
 import MedicamentDetail from "./pages/MedicamentDetail.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Placeholder from "./pages/Placeholder.jsx";
+import Prescriptions from "./pages/Prescriptions.jsx";
 
 export default function App() {
   return (
@@ -19,7 +20,7 @@ export default function App() {
         <Route path="patients/:id" element={<PatientDetail />} />
         <Route path="vigilance" element={<Dashboard />} />
         <Route path="risques" element={<Placeholder titre="Risques" membre="B" />} />
-        <Route path="prescriptions" element={<Placeholder titre="Prescriptions" membre="D" />} />
+        <Route path="prescriptions" element={<Prescriptions />} />
         <Route path="assistant" element={<Assistant />} />
       </Route>
       <Route path="*" element={<Navigate to="/medicaments" replace />} />
