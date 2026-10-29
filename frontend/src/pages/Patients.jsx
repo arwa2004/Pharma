@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Alert, Avatar, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
-  DialogContent, DialogContentText, DialogTitle, IconButton, InputAdornment,
-  Paper, Snackbar, Stack, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, TextField, Tooltip, Typography, Grid
+  DialogContent, DialogContentText, DialogTitle, FormControl, Grid, IconButton,
+  InputAdornment, InputLabel, MenuItem, Paper, Select, Snackbar, Stack, Table,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Tooltip,
+  Typography
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -16,6 +17,7 @@ import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import MedicationOutlinedIcon from "@mui/icons-material/MedicationOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
 
@@ -25,7 +27,7 @@ const VUES = {
   pathologies: "/patients/pathologie-multiple",
 };
 
-const FORMULAIRE_VIDE = { id: null, nom: "", prenom: "", age: "" };
+const FORMULAIRE_VIDE = { id: null, nom: "", prenom: "", age: "", medecin: "" };
 
 function getInitials(prenom, nom) {
   const p = (prenom || "").trim()[0] || "";
@@ -34,6 +36,8 @@ function getInitials(prenom, nom) {
 }
 
 export default function Patients() {
+  const navigate = useNavigate();
+
   const [vue, setVue] = useState("tous");
   const [recherche, setRecherche] = useState("");
   const [ageMin, setAgeMin] = useState("");
@@ -41,6 +45,7 @@ export default function Patients() {
 
   const [patients, setPatients] = useState([]);
   const [tousPatients, setTousPatients] = useState([]);
+  const [refMedecins, setRefMedecins] = useState([]);
   const [sparql, setSparql] = useState("");
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -48,6 +53,13 @@ export default function Patients() {
 
   const [formulaire, setFormulaire] = useState(null);
   const [aSupprimer, setASupprimer] = useState(null);
+
+  // Charger le référentiel des médecins pour le formulaire
+  useEffect(() => {
+    api.referentielMedecins()
+      .then((res) => setRefMedecins(res.data || []))
+      .catch(() => {});
+  }, []);
 
   // Charger les données de la vue courante
   const charger = useCallback(async () => {
@@ -67,7 +79,6 @@ export default function Patients() {
       setPatients(reponse.data);
       setSparql(reponse.sparql);
 
-      // Si vue = tous sans filtre, garder la liste pour calculer les KPIs
       if (vue === "tous" && !recherche && !ageMin && !ageMax) {
         setTousPatients(reponse.data);
       }
@@ -95,25 +106,46 @@ export default function Patients() {
 
   const enregistrer = async () => {
     const age = Number(formulaire.age);
-    if (!formulaire.nom.trim()) return setErreur("Le nom est obligatoire");
+    if (!formulaire.nom.trim()) return setErreur("Le nom de famille est obligatoire");
     if (formulaire.age === "" || !Number.isInteger(age) || age < 0 || age > 120)
-      return setErreur("L'âge doit être un entier entre 0 et 120 (axiome OWL :age [0-120])");
+      return setErreur("L'âge doit être un nombre entier compris entre 0 et 120");
 
     const corps = { nom: formulaire.nom.trim(), age };
     if (formulaire.prenom.trim()) corps.prenom = formulaire.prenom.trim();
+
     try {
       if (formulaire.id) {
+        // Modification
         const res = await api.put(`/patients/${formulaire.id}`, corps);
-        setMessage("Dossier patient mis à jour avec succès dans Fuseki");
+        setMessage("Dossier patient mis à jour avec succès");
         setSparql(res.sparql);
+        setFormulaire(null);
+        setErreur("");
+        charger();
       } else {
+        // Création d'un nouveau patient
         const res = await api.post("/patients", corps);
-        setMessage("Nouveau patient inséré avec succès (INSERT DATA)");
-        setSparql(res.sparql);
+        const nouveauId = res.data?.id;
+
+        // Si un médecin traitant a été sélectionné, l'associer directement
+        if (nouveauId && formulaire.medecin) {
+          try {
+            await api.assignerMedecin(nouveauId, formulaire.medecin);
+          } catch {
+            // tolérance si l'assignation échoue
+          }
+        }
+
+        setFormulaire(null);
+        setErreur("");
+
+        // Ouvrir directement la fiche du patient nouvellement créé pour enrichir ses données
+        if (nouveauId) {
+          navigate(`/patients/${nouveauId}`);
+        } else {
+          charger();
+        }
       }
-      setFormulaire(null);
-      setErreur("");
-      charger();
     } catch (e) {
       setErreur(e.message);
     }
@@ -122,7 +154,7 @@ export default function Patients() {
   const supprimer = async () => {
     try {
       const res = await api.del(`/patients/${aSupprimer.id}`);
-      setMessage("Patient supprimé du graphe RDF");
+      setMessage("Patient supprimé avec succès");
       setSparql(res.sparql);
       setASupprimer(null);
       charger();
@@ -135,131 +167,140 @@ export default function Patients() {
   return (
     <Box sx={{ maxWidth: 1280, mx: "auto" }}>
       {/* En-tête de page */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
         <Box>
-          <Typography variant="h5" fontWeight="700" color="#0f172a" sx={{ letterSpacing: -0.5 }}>
-            Dossiers Patients
+          <Typography variant="h4" color="#0f172a" sx={{ letterSpacing: -0.5 }}>
+            Liste des patients
           </Typography>
-          <Typography variant="body2" color="#64748b" sx={{ fontSize: "0.82rem", mt: 0.2 }}>
-            Registre clinique sémantique · Ontologie OWL & Apache Jena Fuseki
+          <Typography variant="body1" color="#64748b" sx={{ mt: 0.3 }}>
+            Gestion des dossiers patients et suivi des traitements
           </Typography>
         </Box>
         <Button
           variant="contained"
+          size="medium"
           startIcon={<AddIcon />}
           onClick={() => { setErreur(""); setFormulaire(FORMULAIRE_VIDE); }}
           sx={{
             bgcolor: "#065f46",
             "&:hover": { bgcolor: "#044e39" },
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: "0.82rem",
-            px: 2,
-            py: 0.9,
-            borderRadius: 2,
+            fontSize: "0.92rem",
+            px: 2.5,
+            py: 1,
+            borderRadius: 2.5,
             boxShadow: "0 2px 4px rgba(6,95,70,0.2)",
           }}
         >
-          Nouveau Patient
+          Nouveau patient
         </Button>
       </Stack>
 
-      {/* Cartes KPI synthétiques */}
-      <Grid container spacing={2} sx={{ mb: 2.5 }}>
-        <Grid item xs={12} sm={4}>
+      {/* Cartes récapitulatives avec vocabulaire clair */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("tous")}
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: 2.5,
+              borderRadius: 3,
               border: vue === "tous" ? "2px solid #065f46" : "1px solid #e2e8f0",
               bgcolor: vue === "tous" ? "#f0fdf4" : "#ffffff",
               cursor: "pointer",
               transition: "all 0.2s",
-              "&:hover": { borderColor: "#065f46", transform: "translateY(-1px)" },
+              "&:hover": { borderColor: "#065f46", transform: "translateY(-2px)" },
             }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}>
-                  Total Dossiers
+                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>
+                  Patients enregistrés
                 </Typography>
-                <Typography variant="h5" fontWeight="700" color="#0f172a" sx={{ mt: 0.5 }}>
+                <Typography variant="h4" fontWeight="800" color="#0f172a" sx={{ mt: 0.5 }}>
                   {totalGlobal}
                 </Typography>
-                <Typography variant="caption" color="#64748b" sx={{ fontSize: "0.72rem" }}>
-                  Tous les individus <code>:Patient</code>
+                <Typography variant="body2" color="#64748b" sx={{ mt: 0.3 }}>
+                  Total des dossiers actifs
                 </Typography>
               </Box>
-              <Avatar sx={{ bgcolor: "#dcfce7", color: "#065f46", width: 44, height: 44 }}>
-                <PeopleAltOutlinedIcon fontSize="small" />
+              <Avatar sx={{ bgcolor: "#dcfce7", color: "#065f46", width: 48, height: 48 }}>
+                <PeopleAltOutlinedIcon fontSize="medium" />
               </Avatar>
             </Stack>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={4}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("polymedies")}
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: 2.5,
+              borderRadius: 3,
               border: vue === "polymedies" ? "2px solid #d97706" : "1px solid #e2e8f0",
               bgcolor: vue === "polymedies" ? "#fffbeb" : "#ffffff",
               cursor: "pointer",
               transition: "all 0.2s",
-              "&:hover": { borderColor: "#d97706", transform: "translateY(-1px)" },
+              "&:hover": { borderColor: "#d97706", transform: "translateY(-2px)" },
             }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}>
-                  Polymédiqués (≥ 3 méd.)
-                </Typography>
-                <Typography variant="h5" fontWeight="700" color="#b45309" sx={{ mt: 0.5 }}>
+                <Stack direction="row" spacing={0.6} alignItems="center">
+                  <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>
+                    Patients avec 3 médicaments ou plus
+                  </Typography>
+                  <Tooltip title="Classe définie :PatientPolymedique déduite par le raisonneur HermiT ou règle SPARQL HAVING (≥ 3 médicaments)">
+                    <InfoOutlinedIcon sx={{ fontSize: 15, color: "#d97706" }} />
+                  </Tooltip>
+                </Stack>
+                <Typography variant="h4" fontWeight="800" color="#b45309" sx={{ mt: 0.5 }}>
                   {nbPolymediques}
                 </Typography>
-                <Typography variant="caption" color="#78350f" sx={{ fontSize: "0.72rem" }}>
-                  Classe <code>:PatientPolymedique</code>
+                <Typography variant="body2" color="#92400e" sx={{ mt: 0.3 }}>
+                  Surveillance polymédication
                 </Typography>
               </Box>
-              <Avatar sx={{ bgcolor: "#fef3c7", color: "#d97706", width: 44, height: 44 }}>
-                <MedicationOutlinedIcon fontSize="small" />
+              <Avatar sx={{ bgcolor: "#fef3c7", color: "#d97706", width: 48, height: 48 }}>
+                <MedicationOutlinedIcon fontSize="medium" />
               </Avatar>
             </Stack>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={4}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("pathologies")}
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: 2.5,
+              borderRadius: 3,
               border: vue === "pathologies" ? "2px solid #2563eb" : "1px solid #e2e8f0",
               bgcolor: vue === "pathologies" ? "#eff6ff" : "#ffffff",
               cursor: "pointer",
               transition: "all 0.2s",
-              "&:hover": { borderColor: "#2563eb", transform: "translateY(-1px)" },
+              "&:hover": { borderColor: "#2563eb", transform: "translateY(-2px)" },
             }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="caption" sx={{ color: "#1d4ed8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}>
-                  Comorbidités (≥ 2 path.)
-                </Typography>
-                <Typography variant="h5" fontWeight="700" color="#1d4ed8" sx={{ mt: 0.5 }}>
+                <Stack direction="row" spacing={0.6} alignItems="center">
+                  <Typography variant="caption" sx={{ color: "#1d4ed8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>
+                    Patients avec 2 maladies ou plus
+                  </Typography>
+                  <Tooltip title="Classe définie :PatientAPathologieMultiple déduite par HermiT (≥ 2 pathologies liées)">
+                    <InfoOutlinedIcon sx={{ fontSize: 15, color: "#2563eb" }} />
+                  </Tooltip>
+                </Stack>
+                <Typography variant="h4" fontWeight="800" color="#1d4ed8" sx={{ mt: 0.5 }}>
                   {nbPathoMultiples}
                 </Typography>
-                <Typography variant="caption" color="#1e40af" sx={{ fontSize: "0.72rem" }}>
-                  Classe <code>:PatientAPathologieMultiple</code>
+                <Typography variant="body2" color="#1e40af" sx={{ mt: 0.3 }}>
+                  Suivi des comorbidités
                 </Typography>
               </Box>
-              <Avatar sx={{ bgcolor: "#dbeafe", color: "#2563eb", width: 44, height: 44 }}>
-                <WarningAmberOutlinedIcon fontSize="small" />
+              <Avatar sx={{ bgcolor: "#dbeafe", color: "#2563eb", width: 48, height: 48 }}>
+                <WarningAmberOutlinedIcon fontSize="medium" />
               </Avatar>
             </Stack>
           </Paper>
@@ -270,26 +311,24 @@ export default function Patients() {
       <Paper
         elevation={0}
         sx={{
-          p: 1.5,
-          mb: 2,
-          borderRadius: 2.5,
+          p: 2,
+          mb: 2.5,
+          borderRadius: 3,
           border: "1px solid #e2e8f0",
           bgcolor: "#ffffff",
         }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-          {/* Sélecteur de vue */}
-          <Stack direction="row" spacing={0.75}>
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+          {/* Boutons de sélection rapide */}
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
             <Button
-              size="small"
               variant={vue === "tous" ? "contained" : "outlined"}
               onClick={() => setVue("tous")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.76rem",
-                textTransform: "none",
-                fontWeight: 600,
-                px: 1.75,
+                fontSize: "0.85rem", whiteSpace: "nowrap",
+                px: 2,
+                py: 0.6,
                 bgcolor: vue === "tous" ? "#065f46" : "transparent",
                 color: vue === "tous" ? "#ffffff" : "#475569",
                 borderColor: "#cbd5e1",
@@ -299,40 +338,36 @@ export default function Patients() {
               Tous ({totalGlobal})
             </Button>
             <Button
-              size="small"
               variant={vue === "polymedies" ? "contained" : "outlined"}
               onClick={() => setVue("polymedies")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.76rem",
-                textTransform: "none",
-                fontWeight: 600,
-                px: 1.75,
+                fontSize: "0.85rem", whiteSpace: "nowrap",
+                px: 2,
+                py: 0.6,
                 bgcolor: vue === "polymedies" ? "#d97706" : "transparent",
                 color: vue === "polymedies" ? "#ffffff" : "#b45309",
                 borderColor: vue === "polymedies" ? "#d97706" : "#cbd5e1",
                 "&:hover": { bgcolor: vue === "polymedies" ? "#b45309" : "#fef3c7" },
               }}
             >
-              Polymédiqués ({nbPolymediques})
+              3 médicaments ou + ({nbPolymediques})
             </Button>
             <Button
-              size="small"
               variant={vue === "pathologies" ? "contained" : "outlined"}
               onClick={() => setVue("pathologies")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.76rem",
-                textTransform: "none",
-                fontWeight: 600,
-                px: 1.75,
+                fontSize: "0.85rem", whiteSpace: "nowrap",
+                px: 2,
+                py: 0.6,
                 bgcolor: vue === "pathologies" ? "#2563eb" : "transparent",
                 color: vue === "pathologies" ? "#ffffff" : "#1d4ed8",
                 borderColor: vue === "pathologies" ? "#2563eb" : "#cbd5e1",
                 "&:hover": { bgcolor: vue === "pathologies" ? "#1d4ed8" : "#dbeafe" },
               }}
             >
-              Comorbidités ({nbPathoMultiples})
+              Plusieurs maladies ({nbPathoMultiples})
             </Button>
           </Stack>
 
@@ -340,30 +375,29 @@ export default function Patients() {
             <>
               {/* Champ de recherche */}
               <TextField
-                size="small"
-                placeholder="Rechercher par nom ou prénom..."
+                placeholder="Rechercher un patient par nom ou prénom..."
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "#94a3b8", fontSize: 18 }} />
+                      <SearchIcon sx={{ color: "#94a3b8", fontSize: 20 }} />
                     </InputAdornment>
                   ),
                   endAdornment: recherche && (
                     <InputAdornment position="end">
                       <IconButton size="small" onClick={() => setRecherche("")}>
-                        <ClearIcon sx={{ fontSize: 16 }} />
+                        <ClearIcon sx={{ fontSize: 18 }} />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
                 sx={{
                   flexGrow: 1,
-                  minWidth: 220,
+                  minWidth: 260,
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    fontSize: "0.8rem",
+                    borderRadius: 2.5,
+                    fontSize: "0.9rem",
                     bgcolor: "#f8fafc",
                   },
                 }}
@@ -371,25 +405,23 @@ export default function Patients() {
 
               {/* Filtres d'âge */}
               <TextField
-                size="small"
                 placeholder="Âge min"
                 type="number"
                 value={ageMin}
                 onChange={(e) => setAgeMin(e.target.value)}
                 sx={{
-                  width: 95,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: "0.8rem", bgcolor: "#f8fafc" },
+                  width: 105,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2.5, fontSize: "0.9rem", bgcolor: "#f8fafc" },
                 }}
               />
               <TextField
-                size="small"
                 placeholder="Âge max"
                 type="number"
                 value={ageMax}
                 onChange={(e) => setAgeMax(e.target.value)}
                 sx={{
-                  width: 95,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: "0.8rem", bgcolor: "#f8fafc" },
+                  width: 105,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2.5, fontSize: "0.9rem", bgcolor: "#f8fafc" },
                 }}
               />
             </>
@@ -398,7 +430,7 @@ export default function Patients() {
       </Paper>
 
       {erreur && !formulaire && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: "0.8rem" }}>
+        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5, fontSize: "0.88rem" }}>
           {erreur}
         </Alert>
       )}
@@ -408,27 +440,27 @@ export default function Patients() {
         component={Paper}
         elevation={0}
         sx={{
-          borderRadius: 2.5,
+          borderRadius: 3,
           border: "1px solid #e2e8f0",
           overflow: "hidden",
         }}
       >
-        <Table size="small">
+        <Table>
           <TableHead sx={{ bgcolor: "#f8fafc" }}>
             <TableRow>
-              <TableCell sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+              <TableCell sx={{ color: "#475569", textTransform: "uppercase", letterSpacing: 0.5, py: 1.8 }}>
                 Patient
               </TableCell>
-              <TableCell sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
-                URI Ontologique
+              <TableCell sx={{ color: "#475569", textTransform: "uppercase", letterSpacing: 0.5, py: 1.8 }}>
+                Identifiant
               </TableCell>
-              <TableCell sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+              <TableCell sx={{ color: "#475569", textTransform: "uppercase", letterSpacing: 0.5, py: 1.8 }}>
                 Âge
               </TableCell>
-              <TableCell sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
-                Statut Ontologique (Règle HermiT / HAVING)
+              <TableCell sx={{ color: "#475569", textTransform: "uppercase", letterSpacing: 0.5, py: 1.8 }}>
+                Situation
               </TableCell>
-              <TableCell align="right" sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+              <TableCell align="right" sx={{ color: "#475569", textTransform: "uppercase", letterSpacing: 0.5, py: 1.8 }}>
                 Actions
               </TableCell>
             </TableRow>
@@ -436,10 +468,10 @@ export default function Patients() {
           <TableBody>
             {chargement && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={24} sx={{ color: "#065f46" }} />
-                  <Typography variant="caption" sx={{ display: "block", mt: 1, color: "#64748b" }}>
-                    Interrogation d'Apache Jena Fuseki...
+                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                  <CircularProgress size={28} sx={{ color: "#065f46" }} />
+                  <Typography variant="body2" sx={{ display: "block", mt: 1.5, color: "#64748b" }}>
+                    Chargement des dossiers patients...
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -447,9 +479,9 @@ export default function Patients() {
 
             {!chargement && patients.length === 0 && !erreur && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body2" color="#64748b">
-                    Aucun dossier patient ne correspond à ces critères.
+                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                  <Typography variant="body1" color="#64748b">
+                    Aucun patient ne correspond à votre recherche.
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -471,13 +503,13 @@ export default function Patients() {
                     }}
                   >
                     {/* Nom + Prénom avec Avatar */}
-                    <TableCell sx={{ py: 1.25 }}>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
+                    <TableCell sx={{ py: 1.5 }}>
+                      <Stack direction="row" spacing={1.75} alignItems="center">
                         <Avatar
                           sx={{
-                            width: 32,
-                            height: 32,
-                            fontSize: "0.72rem",
+                            width: 38,
+                            height: 38,
+                            fontSize: "0.85rem", whiteSpace: "nowrap",
                             fontWeight: 700,
                             bgcolor: poly ? "#fef3c7" : patho ? "#dbeafe" : "#f1f5f9",
                             color: poly ? "#b45309" : patho ? "#1d4ed8" : "#475569",
@@ -486,49 +518,49 @@ export default function Patients() {
                           {initials}
                         </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontSize: "0.82rem" }}>
+                          <Typography variant="body1" sx={{ fontWeight: 700, color: "#0f172a" }}>
                             {p.nom} {p.prenom || ""}
                           </Typography>
                         </Box>
                       </Stack>
                     </TableCell>
 
-                    {/* URI */}
-                    <TableCell sx={{ py: 1.25 }}>
+                    {/* Identifiant */}
+                    <TableCell sx={{ py: 1.5 }}>
                       <Chip
                         size="small"
                         label={`:${p.id}`}
                         variant="outlined"
                         sx={{
-                          fontSize: "0.7rem",
+                          fontSize: "0.78rem",
                           fontFamily: "monospace",
                           bgcolor: "#f8fafc",
                           borderColor: "#cbd5e1",
                           color: "#334155",
-                          height: 22,
+                          height: 24,
                         }}
                       />
                     </TableCell>
 
                     {/* Âge */}
-                    <TableCell sx={{ py: 1.25, fontSize: "0.8rem", color: "#334155", fontWeight: 500 }}>
+                    <TableCell sx={{ py: 1.5, fontSize: "0.92rem", color: "#334155", fontWeight: 600 }}>
                       {p.age !== undefined && p.age !== null ? `${p.age} ans` : "—"}
                     </TableCell>
 
-                    {/* Statut Ontologique */}
-                    <TableCell sx={{ py: 1.25 }}>
-                      <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" alignItems="center">
+                    {/* Situation */}
+                    <TableCell sx={{ py: 1.5 }}>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                         {poly && (
                           <Chip
                             size="small"
-                            icon={<MedicationOutlinedIcon sx={{ fontSize: "14px !important" }} />}
-                            label={`Polymédiqué (${p.nb_medicaments} méd.)`}
+                            icon={<MedicationOutlinedIcon sx={{ fontSize: "16px !important" }} />}
+                            label={`3 médicaments ou + (${p.nb_medicaments})`}
                             sx={{
                               bgcolor: "#fef3c7",
                               color: "#b45309",
-                              fontWeight: 600,
-                              fontSize: "0.72rem",
-                              height: 24,
+                              fontWeight: 700,
+                              fontSize: "0.78rem",
+                              height: 26,
                               border: "1px solid #fde68a",
                             }}
                           />
@@ -536,14 +568,14 @@ export default function Patients() {
                         {patho && (
                           <Chip
                             size="small"
-                            icon={<WarningAmberOutlinedIcon sx={{ fontSize: "14px !important" }} />}
-                            label={`Comorbidités (${p.nb_pathologies} path.)`}
+                            icon={<WarningAmberOutlinedIcon sx={{ fontSize: "16px !important" }} />}
+                            label={`Plusieurs maladies (${p.nb_pathologies})`}
                             sx={{
                               bgcolor: "#dbeafe",
                               color: "#1d4ed8",
-                              fontWeight: 600,
-                              fontSize: "0.72rem",
-                              height: 24,
+                              fontWeight: 700,
+                              fontSize: "0.78rem",
+                              height: 26,
                               border: "1px solid #bfdbfe",
                             }}
                           />
@@ -551,14 +583,14 @@ export default function Patients() {
                         {!poly && !patho && (
                           <Chip
                             size="small"
-                            icon={<CheckCircleOutlineIcon sx={{ fontSize: "14px !important", color: "#64748b" }} />}
-                            label={`Standard (${p.nb_medicaments ?? 0} méd. · ${p.nb_pathologies ?? 0} path.)`}
+                            icon={<CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "#64748b" }} />}
+                            label={`Standard (${p.nb_medicaments ?? 0} méd. · ${p.nb_pathologies ?? 0} mal.)`}
                             variant="outlined"
                             sx={{
-                              fontSize: "0.72rem",
+                              fontSize: "0.78rem",
                               color: "#475569",
                               borderColor: "#cbd5e1",
-                              height: 24,
+                              height: 26,
                             }}
                           />
                         )}
@@ -566,9 +598,9 @@ export default function Patients() {
                     </TableCell>
 
                     {/* Actions */}
-                    <TableCell align="right" sx={{ py: 1.25 }}>
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title="Ouvrir la fiche et gérer les relations sémantiques">
+                    <TableCell align="right" sx={{ py: 1.5 }}>
+                      <Stack direction="row" spacing={0.75} justifyContent="flex-end">
+                        <Tooltip title="Ouvrir la fiche du patient (traitements, médecin, antécédents)">
                           <IconButton
                             component={Link}
                             to={`/patients/${p.id}`}
@@ -584,7 +616,7 @@ export default function Patients() {
                         </Tooltip>
 
                         {p.age !== undefined && (
-                          <Tooltip title="Modifier les attributs simples (nom, prénom, âge)">
+                          <Tooltip title="Modifier les informations (nom, prénom, âge)">
                             <IconButton
                               size="small"
                               onClick={() => {
@@ -594,6 +626,7 @@ export default function Patients() {
                                   nom: p.nom,
                                   prenom: p.prenom ?? "",
                                   age: String(p.age),
+                                  medecin: "",
                                 });
                               }}
                               sx={{
@@ -607,7 +640,7 @@ export default function Patients() {
                           </Tooltip>
                         )}
 
-                        <Tooltip title="Supprimer (vérifie la contrainte d'intégrité OWL)">
+                        <Tooltip title="Supprimer ce dossier patient">
                           <IconButton
                             size="small"
                             onClick={() => setASupprimer(p)}
@@ -629,56 +662,79 @@ export default function Patients() {
         </Table>
       </TableContainer>
 
-      {/* Box SPARQL repliable élégante */}
+      {/* Requête SPARQL */}
       <SparqlBox sparql={sparql} />
 
-      {/* Modal Création / Modification */}
+      {/* Modal Création / Modification avec champ Médecin traitant */}
       <Dialog
         open={!!formulaire}
         onClose={() => setFormulaire(null)}
         fullWidth
-        maxWidth="xs"
+        maxWidth="sm"
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{ bgcolor: "#065f46", color: "white", py: 1.75, px: 2.5, fontSize: "0.95rem", fontWeight: 600 }}>
-          {formulaire?.id ? `Modifier le patient :${formulaire.id}` : "Nouveau Patient (INSERT DATA)"}
+        <DialogTitle sx={{ bgcolor: "#065f46", color: "white", py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>
+          {formulaire?.id ? `Modifier le patient :${formulaire.id}` : "Nouveau patient"}
         </DialogTitle>
-        <DialogContent sx={{ p: 2.5, mt: 1 }}>
-          <Stack spacing={2} sx={{ mt: 0.5 }}>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Stack spacing={2.5} sx={{ mt: 0.5 }}>
             {erreur && (
-              <Alert severity="error" sx={{ py: 0.5, fontSize: "0.8rem", borderRadius: 2 }}>
+              <Alert severity="error" sx={{ py: 0.75, fontSize: "0.88rem", borderRadius: 2 }}>
                 {erreur}
               </Alert>
             )}
+
             <TextField
               label="Nom de famille"
               required
               fullWidth
-              size="small"
               value={formulaire?.nom ?? ""}
               onChange={(e) => setFormulaire({ ...formulaire, nom: e.target.value })}
+              helperText="Champ obligatoire"
             />
+
             <TextField
               label="Prénom"
               fullWidth
-              size="small"
               value={formulaire?.prenom ?? ""}
               onChange={(e) => setFormulaire({ ...formulaire, prenom: e.target.value })}
+              helperText="Optionnel"
             />
+
             <TextField
-              label="Âge (0 à 120)"
+              label="Âge"
               type="number"
               required
               fullWidth
-              size="small"
               value={formulaire?.age ?? ""}
               onChange={(e) => setFormulaire({ ...formulaire, age: e.target.value })}
-              helperText="Axiome OWL : xsd:integer [0-120]"
+              helperText="Âge entre 0 et 120"
             />
+
+            {/* Médecin traitant (disponible à la création pour enrichir le patient immédiatement) */}
+            {!formulaire?.id && (
+              <FormControl fullWidth>
+                <InputLabel>Médecin traitant (optionnel)</InputLabel>
+                <Select
+                  value={formulaire?.medecin ?? ""}
+                  label="Médecin traitant (optionnel)"
+                  onChange={(e) => setFormulaire({ ...formulaire, medecin: e.target.value })}
+                >
+                  <MenuItem value="">
+                    <em>Aucun médecin pour le moment</em>
+                  </MenuItem>
+                  {refMedecins.map((med) => (
+                    <MenuItem key={med.id} value={med.id}>
+                      Dr. {med.nom} {med.prenom || ""} (:{med.id})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setFormulaire(null)} sx={{ textTransform: "none", color: "#64748b" }}>
+        <DialogActions sx={{ p: 2.5, pt: 0 }}>
+          <Button onClick={() => setFormulaire(null)} sx={{ textTransform: "none", color: "#64748b", fontSize: "0.9rem" }}>
             Annuler
           </Button>
           <Button
@@ -688,11 +744,13 @@ export default function Patients() {
               bgcolor: "#065f46",
               "&:hover": { bgcolor: "#044e39" },
               textTransform: "none",
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: "0.92rem",
               borderRadius: 2,
+              px: 3,
             }}
           >
-            {formulaire?.id ? "Mettre à jour" : "Insérer dans Fuseki"}
+            {formulaire?.id ? "Mettre à jour" : "Enregistrer et ouvrir la fiche"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -703,31 +761,28 @@ export default function Patients() {
         onClose={() => setASupprimer(null)}
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{ color: "#dc2626", fontSize: "0.95rem", fontWeight: 600 }}>
-          Confirmer la suppression du patient ?
+        <DialogTitle sx={{ color: "#dc2626", fontSize: "1.05rem", fontWeight: 700 }}>
+          Supprimer ce dossier patient ?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ fontSize: "0.82rem", color: "#475569" }}>
-            Tous les triplets décrivant <strong>:{aSupprimer?.id}</strong> ({aSupprimer?.nom}{" "}
-            {aSupprimer?.prenom}) seront supprimés du graphe Fuseki via une requête{" "}
-            <code>DELETE WHERE</code>.
+          <DialogContentText sx={{ fontSize: "0.9rem", color: "#475569" }}>
+            Êtes-vous sûr de vouloir supprimer le dossier de <strong>{aSupprimer?.nom} {aSupprimer?.prenom}</strong> (identifiant <code>:{aSupprimer?.id}</code>) ?
             <br />
             <br />
-            <em>Contrainte ontologique :</em> La suppression sera bloquée si une Prescription pointe vers
-            ce patient (axiome <code>:pourPatient exactly 1 :Patient</code>).
+            <em>Remarque :</em> La suppression sera automatiquement refusée si une prescription médicale est rattachée à ce patient dans l'établissement.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setASupprimer(null)} sx={{ textTransform: "none", color: "#64748b" }}>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setASupprimer(null)} sx={{ textTransform: "none", color: "#64748b", fontSize: "0.9rem" }}>
             Annuler
           </Button>
           <Button
             color="error"
             variant="contained"
             onClick={supprimer}
-            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+            sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.9rem", borderRadius: 2 }}
           >
-            Supprimer définitivement
+            Confirmer la suppression
           </Button>
         </DialogActions>
       </Dialog>

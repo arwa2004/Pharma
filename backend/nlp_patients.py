@@ -267,6 +267,19 @@ enregistrer_intention(
 def _gen_interactions(entites: Dict[str, Any]) -> Tuple[str, str]:
     # FIX: Using the direct :interagitAvec property found in your dataset
     sparql = """PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
+<<<<<<< HEAD
+SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ;
+     :prendMedicament ?a , ?b .
+  ?i :impliqueMedicament ?a , ?b .
+  FILTER(STR(?a) < STR(?b))
+  OPTIONAL { ?a :nomCommercial ?nomMedA }
+  OPTIONAL { ?b :nomCommercial ?nomMedB }
+  OPTIONAL { ?i :libelle ?libelle }
+  BIND(STRAFTER(STR(?a), "#") AS ?medA)
+  BIND(STRAFTER(STR(?b), "#") AS ?medB)
+  BIND(STRAFTER(STR(?i), "#") AS ?interaction)
+=======
 SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB WHERE {
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient .
   
@@ -283,6 +296,7 @@ SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB WHERE {
   
   BIND(STRAFTER(STR(?medA), "#") AS ?medA_id)
   BIND(STRAFTER(STR(?medB), "#") AS ?medB_id)
+>>>>>>> b2b08b177218a69e4aba41aae1c14727fdb3dd19
 } ORDER BY ?nomPatient"""
     return "SELECT", sparql
 

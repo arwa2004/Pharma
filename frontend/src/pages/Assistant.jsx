@@ -21,7 +21,7 @@ import SparqlBox from "../components/SparqlBox.jsx";
 
 const QUESTIONS_RAPIDES = [
   {
-    categorie: "Médicaments & Composition (Membre A)",
+    categorie: "Médicaments & Composition ",
     questions: [
       "Quels médicaments contiennent du paracétamol ?",
       "Qui fabrique la Metformine ?",
@@ -122,17 +122,15 @@ export default function Assistant() {
         <Box>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Typography variant="h5" fontWeight="700" color="#0f172a" sx={{ letterSpacing: -0.5 }}>
-              Assistant Sémantique & NLP
+              Assistant IA
             </Typography>
             <Chip
               icon={<PsychologyIcon sx={{ fontSize: "15px !important", color: "#065f46" }} />}
-              label="spaCy fr_core_news_md"
               size="small"
               sx={{ bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 600, fontSize: "0.72rem" }}
             />
           </Stack>
           <Typography variant="body2" color="#64748b" sx={{ fontSize: "0.82rem", mt: 0.3 }}>
-            Conversion de questions en langage naturel vers SPARQL 1.1 sans API LLM (100% local, déterministe)
           </Typography>
         </Box>
       </Stack>
@@ -206,7 +204,7 @@ export default function Assistant() {
         {/* Suggestions classées par catégorie */}
         <Box sx={{ mt: 2.5, pt: 2, borderTop: "1px solid #f1f5f9" }}>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem", display: "block", mb: 1.25 }}>
-            💡 Questions recommandées pour la soutenance :
+            💡 Questions recommandées :
           </Typography>
           <Grid container spacing={1.5}>
             {QUESTIONS_RAPIDES.map((bloc, bIdx) => (

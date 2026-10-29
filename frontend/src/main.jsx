@@ -3,81 +3,64 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import App from "./App.jsx";
+import "./index.css";
 
-// Thème avec typographie compacte et soignée
+
+
+
+// Thème médical clair, moderne et lisible
 const theme = createTheme({
   palette: {
-    primary: { main: "#2f7377" },
-    background: { default: "#f1f7f7" },
+    primary: { main: "#065f46" }, // Vert émeraude médical
+    secondary: { main: "#2563eb" },
+    background: { default: "#f8fafc" },
   },
   typography: {
-    fontSize: 13,
-    htmlFontSize: 16,
-    h4: { fontSize: "1.25rem", fontWeight: 700 },
-    h5: { fontSize: "1.1rem", fontWeight: 600 },
-    h6: { fontSize: "0.95rem", fontWeight: 600 },
-    subtitle1: { fontSize: "0.88rem" },
-    subtitle2: { fontSize: "0.82rem" },
-    body1: { fontSize: "0.84rem" },
-    body2: { fontSize: "0.78rem" },
-    button: { fontSize: "0.8rem", textTransform: "none", fontWeight: 500 },
-    caption: { fontSize: "0.72rem" },
+    fontSize: 14.5,
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    h4: { fontSize: "1.5rem", fontWeight: 700 },
+    h5: { fontSize: "1.3rem", fontWeight: 700 },
+    h6: { fontSize: "1.1rem", fontWeight: 600 },
+    subtitle1: { fontSize: "1rem" },
+    subtitle2: { fontSize: "0.92rem", fontWeight: 600 },
+    body1: { fontSize: "0.95rem" },
+    body2: { fontSize: "0.88rem" },
+    button: { fontSize: "0.88rem", textTransform: "none", fontWeight: 600 },
+    caption: { fontSize: "0.8rem" },
   },
   components: {
     MuiButton: {
-      defaultProps: {
-        size: "small",
-      },
+      defaultProps: { size: "medium" },
       styleOverrides: {
         root: {
           textTransform: "none",
-          borderRadius: 6,
-          fontSize: "0.78rem",
-          padding: "4px 10px",
-        },
-      },
-    },
-    MuiTextField: {
-      defaultProps: {
-        size: "small",
-      },
-      styleOverrides: {
-        root: {
-          "& .MuiInputBase-input": {
-            fontSize: "0.82rem",
-            padding: "6px 10px",
-          },
-          "& .MuiInputLabel-root": {
-            fontSize: "0.82rem",
-          },
+          borderRadius: 8,
+          fontWeight: 600,
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
         root: {
-          padding: "6px 10px",
-          fontSize: "0.8rem",
+          fontSize: "0.88rem",
+          padding: "10px 14px",
         },
         head: {
-          fontWeight: 600,
-          fontSize: "0.8rem",
+          fontWeight: 700,
+          fontSize: "0.82rem",
         },
       },
     },
     MuiChip: {
-      defaultProps: {
-        size: "small",
-      },
       styleOverrides: {
         root: {
-          fontSize: "0.72rem",
-          height: 22,
+          fontSize: "0.8rem",
+          height: 26,
         },
       },
     },
   },
-  shape: { borderRadius: 8 },
+  shape: { borderRadius: 10 },
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(

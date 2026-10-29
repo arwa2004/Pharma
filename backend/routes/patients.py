@@ -146,8 +146,7 @@ def alertes_interactions_toutes():
 SELECT DISTINCT ?id ?nom ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nom ;
      :prendMedicament ?a , ?b .
-  ?a :participeInteraction ?i .
-  ?b :participeInteraction ?i .
+  ?i :impliqueMedicament ?a , ?b .
   FILTER(STR(?a) < STR(?b))
   OPTIONAL { ?a :nomCommercial ?nomMedA }
   OPTIONAL { ?b :nomCommercial ?nomMedB }
@@ -265,8 +264,7 @@ def interactions_patient(id_patient: IdPatient):
     requete = f"""
 SELECT DISTINCT ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {{
   :{id_patient} :prendMedicament ?a , ?b .
-  ?a :participeInteraction ?i .
-  ?b :participeInteraction ?i .
+  ?i :impliqueMedicament ?a , ?b .
   FILTER(STR(?a) < STR(?b))
   OPTIONAL {{ ?a :nomCommercial ?nomMedA }}
   OPTIONAL {{ ?b :nomCommercial ?nomMedB }}
@@ -315,8 +313,7 @@ SELECT ?id ?nom ?prenom WHERE {{
     interactions = fc.select(f"""
 SELECT DISTINCT ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {{
   :{id_patient} :prendMedicament ?a , ?b .
-  ?a :participeInteraction ?i .
-  ?b :participeInteraction ?i .
+  ?i :impliqueMedicament ?a , ?b .
   FILTER(STR(?a) < STR(?b))
   OPTIONAL {{ ?a :nomCommercial ?nomMedA }}
   OPTIONAL {{ ?b :nomCommercial ?nomMedB }}

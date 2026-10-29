@@ -23,9 +23,9 @@ export default function SparqlBox({ sparql, defaultOpen = false }) {
     <Paper
       elevation={0}
       sx={{
-        mt: 2.5,
+        mt: 3,
         border: "1px solid #cbd5e1",
-        borderRadius: 2,
+        borderRadius: 2.5,
         overflow: "hidden",
         bgcolor: "#ffffff",
       }}
@@ -33,7 +33,7 @@ export default function SparqlBox({ sparql, defaultOpen = false }) {
       <Box
         onClick={() => setOuvert(!ouvert)}
         sx={{
-          px: 2,
+          px: 2.5,
           py: 1.25,
           display: "flex",
           alignItems: "center",
@@ -46,11 +46,15 @@ export default function SparqlBox({ sparql, defaultOpen = false }) {
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <CodeIcon sx={{ color: "#065f46", fontSize: 20 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "0.82rem", color: "#1e293b" }}>
-            Dernière requête SPARQL exécutée (Apache Jena Fuseki)
+          <CodeIcon sx={{ color: "#065f46", fontSize: 22 }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.88rem", color: "#1e293b" }}>
+            Requête SPARQL exécutée (Apache Jena Fuseki)
           </Typography>
-          <Chip label="SPARQL 1.1" size="small" sx={{ height: 20, fontSize: "0.68rem", bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 600 }} />
+          <Chip
+            label="SPARQL 1.1"
+            size="small"
+            sx={{ height: 22, fontSize: "0.72rem", bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 700 }}
+          />
         </Stack>
 
         <Stack direction="row" spacing={1} alignItems="center">
@@ -62,9 +66,9 @@ export default function SparqlBox({ sparql, defaultOpen = false }) {
           <Button
             size="small"
             endIcon={ouvert ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            sx={{ fontSize: "0.75rem", textTransform: "none", color: "#64748b" }}
+            sx={{ fontSize: "0.82rem", textTransform: "none", color: "#475569", fontWeight: 600 }}
           >
-            {ouvert ? "Masquer" : "Afficher le code"}
+            {ouvert ? "Masquer" : "Voir la requête"}
           </Button>
         </Stack>
       </Box>
@@ -74,14 +78,14 @@ export default function SparqlBox({ sparql, defaultOpen = false }) {
           component="pre"
           sx={{
             m: 0,
-            p: 2,
+            p: 2.5,
             bgcolor: "#0f172a",
             color: "#e2e8f0",
-            fontSize: "0.78rem",
+            fontSize: "0.84rem",
             fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-            lineHeight: 1.5,
+            lineHeight: 1.6,
             overflowX: "auto",
-            maxHeight: 280,
+            maxHeight: 320,
             whiteSpace: "pre-wrap",
           }}
         >

@@ -305,7 +305,7 @@ export default function Medicaments() {
               Médicaments & Composition
             </Typography>
             <Chip
-              label="Membre A · Domaine Ontologique A"
+              label=" Domaine Ontologique "
               size="small"
               sx={{ bgcolor: "#059669", color: "#fff", fontWeight: 600, fontSize: "0.75rem" }}
             />
