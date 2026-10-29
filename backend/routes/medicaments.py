@@ -42,6 +42,7 @@ from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 import fuseki_client as fc
+from nlp_engine import recharger_lexique
 
 router = APIRouter(prefix="/medicaments", tags=["Médicaments & Composition"])
 
@@ -562,6 +563,7 @@ def creer_medicament(data: MedicamentIn):
 
     sparql_update = "INSERT DATA {\n  " + "\n  ".join(triplets) + "\n}"
     fc.update(sparql_update)
+    recharger_lexique()  # ✅ le NLP connaît immédiatement le nouveau médicament
 
     return _reponse(
         {"id": nouvel_id, "message": f"Médicament '{data.nomCommercial}' créé avec succès ({nouvel_id})."},
@@ -640,6 +642,7 @@ WHERE {{
 }}"""
 
     fc.update(sparql)
+    recharger_lexique()  # ✅ le NLP voit la mise à jour immédiatement
     return _reponse({"message": f"Médicament '{id}' mis à jour avec succès."}, sparql)
 
 
@@ -662,6 +665,7 @@ def supprimer_medicament(id: IdMedicament):
 DELETE WHERE {{ ?s ?p :{id} }}"""
 
     fc.update(sparql)
+    recharger_lexique()  # ✅ retire l'entité supprimée du lexique NLP
     return _reponse({"message": f"Médicament '{id}' supprimé de l'ontologie."}, sparql)
 
 
@@ -679,6 +683,7 @@ def associer_molecule(id: IdMedicament, id_mol: IdEntite):
   :{id} :contientPrincipeActif :{id_mol} . 
 }}"""
     fc.update(sparql)
+    recharger_lexique()
     return _reponse({"message": f"Molécule {id_mol} rattachée à {id}."}, sparql)
 
 
@@ -690,6 +695,7 @@ def dissocier_molecule(id: IdMedicament, id_mol: IdEntite):
   :{id} :contientPrincipeActif :{id_mol} . 
 }}"""
     fc.update(sparql)
+    recharger_lexique()
     return _reponse({"message": f"Molécule {id_mol} retirée de {id}."}, sparql)
 
 
@@ -700,6 +706,7 @@ def associer_excipient(id: IdMedicament, id_exc: IdEntite):
         raise HTTPException(status_code=404, detail="Médicament introuvable")
     sparql = f"INSERT DATA {{ :{id} :contientExcipient :{id_exc} . }}"
     fc.update(sparql)
+    recharger_lexique()
     return _reponse({"message": f"Excipient {id_exc} associé à {id}."}, sparql)
 
 
@@ -708,6 +715,7 @@ def dissocier_excipient(id: IdMedicament, id_exc: IdEntite):
     """Retire un excipient d'un médicament."""
     sparql = f"DELETE DATA {{ :{id} :contientExcipient :{id_exc} . }}"
     fc.update(sparql)
+    recharger_lexique()
     return _reponse({"message": f"Excipient {id_exc} retiré de {id}."}, sparql)
 
 
@@ -745,6 +753,7 @@ def creer_laboratoire(data: LaboratoireIn):
 
     sparql = "INSERT DATA {\n  " + "\n  ".join(triplets) + "\n}"
     fc.update(sparql)
+    recharger_lexique()  # ✅ le NLP connaît immédiatement le nouveau laboratoire
     return _reponse({"id": nouvel_id, "message": f"Laboratoire '{data.nom}' créé ({nouvel_id})."}, sparql)
 
 
@@ -770,6 +779,7 @@ WHERE {{
   OPTIONAL {{ :{id} :adresse ?oldAdresse }}
 }}"""
     fc.update(sparql)
+    recharger_lexique()  # ✅ le NLP voit le nom mis à jour
     return _reponse({"message": f"Laboratoire '{id}' mis à jour."}, sparql)
 
 
@@ -789,4 +799,5 @@ def supprimer_laboratoire(id: IdLaboratoire):
 
     sparql = f"DELETE WHERE {{ :{id} ?p ?o }} ; DELETE WHERE {{ ?s ?p :{id} }}"
     fc.update(sparql)
+    recharger_lexique()  # ✅ retire le laboratoire supprimé du lexique NLP
     return _reponse({"message": f"Laboratoire '{id}' supprimé."}, sparql)

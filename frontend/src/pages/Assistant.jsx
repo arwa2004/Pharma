@@ -21,7 +21,7 @@ import SparqlBox from "../components/SparqlBox.jsx";
 
 const QUESTIONS_RAPIDES = [
   {
-    categorie: "Médicaments & Composition (Membre A)",
+    categorie: "Médicaments & Composition ",
     questions: [
       "Quels médicaments contiennent du paracétamol ?",
       "Qui fabrique la Metformine ?",
