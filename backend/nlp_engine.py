@@ -182,6 +182,8 @@ SELECT DISTINCT ?type ?val ?mol WHERE {
   UNION { ?x (:contientMolecule|:contientPrincipeActif)/:nom ?val . BIND("molecule" AS ?type) }
   UNION { ?x :estFabriquePar ?l . ?l :nom ?val . BIND("laboratoire" AS ?type) }
   UNION { ?x a/rdfs:subClassOf* :Pathologie ; :libelle ?val . BIND("pathologie" AS ?type) }
+  UNION { ?x a/rdfs:subClassOf* :Medecin ; :nom ?val . BIND("patient" AS ?type) }
+  UNION { ?x a/rdfs:subClassOf* :Pharmacien ; :nom ?val . BIND("patient" AS ?type) }
 }"""
 
 
@@ -379,6 +381,10 @@ def extraire_entites(doc, question: str) -> Dict[str, Any]:
         ent["dosage"] = float(m.group(1).replace(",", "."))
 
     # Molécules, marques, médicaments, laboratoires
+        # Durée en jours : "30 jours"
+    m = re.search(r"\b(\d{1,4})\s*(?:jours?|j)\b", qn)
+    if m:
+        ent["duree"] = int(m.group(1))
     mols = set(_trouver(lex.molecules, qn))
     marques = [k for k in _trouver(set(MARQUES), qn)]
     for marque in marques:

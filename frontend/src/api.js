@@ -24,8 +24,8 @@ async function request(path, options = {}) {
       typeof d === "string"
         ? d
         : Array.isArray(d)
-        ? d.map((e) => e.msg).join(", ")
-        : `Erreur ${res.status}`;
+          ? d.map((e) => e.msg).join(", ")
+          : `Erreur ${res.status}`;
     throw new Error(message);
   }
   return body; // forme commune : { data, sparql }
@@ -149,7 +149,7 @@ export const api = {
   supprimerInteraction: (id) => request(`/risques/interactions/${id}`, { method: "DELETE" }),
   ajouterMedicamentInteraction: (id, idMed) => request(`/risques/interactions/${id}/medicaments/${idMed}`, { method: "POST" }),
   retirerMedicamentInteraction: (id, idMed) => request(`/risques/interactions/${id}/medicaments/${idMed}`, { method: "DELETE" }),
-
+  analyserSymptomesNLP: (texte) => request("/risques/analyser", { method: "POST", body: JSON.stringify({ texte }) }),
   // ==========================================
   // MODULE IA / NLP (spaCy local sans LLM)
   // ==========================================

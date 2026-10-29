@@ -4,7 +4,7 @@ import {
   DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel,
   Grid, IconButton, InputAdornment, InputLabel, MenuItem, Paper, Select, Snackbar,
   Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Tabs, Tab, TextField, Tooltip, Typography,
+  Tabs, Tab, TextField, Tooltip, Typography, Divider, List, ListItem, ListItemText
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -19,6 +19,8 @@ import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import CompareArrowsOutlinedIcon from "@mui/icons-material/CompareArrowsOutlined";
 import MedicationOutlinedIcon from "@mui/icons-material/MedicationOutlined";
 import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber"; // New Icon for NLP
+import PsychologyIcon from "@mui/icons-material/Psychology"; // New Icon for NLP
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
 
@@ -30,7 +32,7 @@ function Onglet({ children, actif, index }) {
 }
 
 // ============================================================================
-// Page principale : 3 onglets (Effets secondaires / Contre-indications / Interactions)
+// Page principale : 4 onglets
 // ============================================================================
 export default function Risques() {
   const [onglet, setOnglet] = useState(0);
@@ -40,8 +42,8 @@ export default function Risques() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    api.referentielMedicamentsRisques().then((r) => setRefMedicaments(r.data)).catch(() => {});
-    api.referentielPathologiesRisques().then((r) => setRefPathologies(r.data)).catch(() => {});
+    api.referentielMedicamentsRisques().then((r) => setRefMedicaments(r.data)).catch(() => { });
+    api.referentielPathologiesRisques().then((r) => setRefPathologies(r.data)).catch(() => { });
   }, []);
 
   const nomMed = (id) => refMedicaments.find((m) => m.id === id)?.nom || id;
@@ -73,6 +75,7 @@ export default function Risques() {
           <Tab icon={<SickOutlinedIcon fontSize="small" />} iconPosition="start" label="Effets Secondaires" />
           <Tab icon={<BlockOutlinedIcon fontSize="small" />} iconPosition="start" label="Contre-Indications" />
           <Tab icon={<CompareArrowsOutlinedIcon fontSize="small" />} iconPosition="start" label="Interactions" />
+          <Tab icon={<PsychologyIcon fontSize="small" />} iconPosition="start" label="Analyseur NLP" />
         </Tabs>
       </Paper>
 
@@ -94,6 +97,9 @@ export default function Risques() {
           refMedicaments={refMedicaments} nomMed={nomMed}
           setSparql={setSparql} setMessage={setMessage}
         />
+      </Onglet>
+      <Onglet actif={onglet} index={3}>
+        <OngletAnalyseNLP setSparql={setSparql} />
       </Onglet>
 
       <SparqlBox sparql={sparql} />
@@ -134,7 +140,185 @@ function CarteKpi({ label, valeur, sousTitre, actif, couleur, fond, icone, onCli
 }
 
 // ============================================================================
-// ONGLET 1 : EFFETS SECONDAIRES
+// ONGLET 4 : ANALYSEUR NLP DE SYMPTÔMES
+// ============================================================================
+function OngletAnalyseNLP({ setSparql }) {
+  const [texte, setTexte] = useState("");
+  const [chargement, setChargement] = useState(false);
+  const [resultat, setResultat] = useState(null);
+  const [erreur, setErreur] = useState("");
+
+  const handleAnalyser = async () => {
+    if (!texte.trim() || texte.length < 5) {
+      setErreur("Veuillez entrer une description plus détaillée (min. 5 caractères).");
+      return;
+    }
+
+    setChargement(true);
+    setErreur("");
+    setResultat(null);
+    setSparql("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/risques/analyser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texte: texte }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur serveur lors de l'analyse.");
+      }
+
+      const body = await response.json();
+      const res = body.data ?? body; // on retire l'enveloppe { data, sparql }
+
+      if (res.erreur) {
+        throw new Error(res.erreur);
+      }
+
+      setResultat(res);
+
+      if (body.sparql) {
+        setSparql(body.sparql);
+      }
+    } catch (err) {
+      setErreur(err.message || "Une erreur est survenue lors de la communication avec le serveur.");
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const symptomes = resultat?.symptomes_detectes ?? [];
+  const nies = resultat?.symptomes_nies ?? [];
+  const medicaments = resultat?.medicaments_risque ?? [];
+
+  return (
+    <Box>
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 2.5, border: "1px solid #e2e8f0", mb: 3 }}>
+        <Typography variant="h6" fontWeight="700" color={COULEUR} sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+          <PsychologyIcon /> Analyseur de Symptômes (NLP)
+        </Typography>
+        <Typography variant="body2" color="#64748b" sx={{ mb: 3, fontSize: "0.85rem" }}>
+          Décrivez les symptômes du patient pour vérifier s'ils correspondent à des effets secondaires connus de nos médicaments.
+        </Typography>
+
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          variant="outlined"
+          label="Description des symptômes"
+          placeholder="Ex: Le patient prend un médicament et présente des difficultés respiratoires et un gonflement du visage..."
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          disabled={chargement}
+          sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "#f8fafc" } }}
+        />
+
+        <Button
+          variant="contained"
+          onClick={handleAnalyser}
+          disabled={chargement}
+          startIcon={chargement ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
+          sx={{ bgcolor: COULEUR, "&:hover": { bgcolor: "#6c2410" }, textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+        >
+          {chargement ? "Analyse en cours..." : "Analyser le texte"}
+        </Button>
+      </Paper>
+
+      {erreur && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          {erreur}
+        </Alert>
+      )}
+
+      {resultat && (
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 2.5, border: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
+          <Typography variant="h6" fontWeight="700" gutterBottom>
+            Résultats de l'analyse :
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+
+          {/* Alerte d'urgence */}
+          {resultat.alerte_urgence && (
+            <Alert severity="error" icon={<WarningAmberIcon fontSize="large" />} sx={{ mb: 3, fontWeight: "bold", borderRadius: 2 }}>
+              ⚠️ URGENCE MÉDICALE : Les symptômes décrits (ex: difficultés respiratoires, gonflement) peuvent indiquer une réaction grave. Veuillez consulter un médecin ou appeler les urgences immédiatement.
+            </Alert>
+          )}
+
+          {/* Alerte effet grave (sans urgence) */}
+          {!resultat.alerte_urgence && resultat.alerte_grave && (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+              Au moins un des symptômes identifiés correspond à un effet secondaire grave. Un avis médical est recommandé.
+            </Alert>
+          )}
+
+          {/* Symptômes identifiés */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" fontWeight="700" gutterBottom color="#0f172a">
+              Symptômes identifiés dans l'ontologie :
+            </Typography>
+            {symptomes.length > 0 ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {symptomes.map((symp, index) => (
+                  <Chip key={index} label={symp} sx={{ bgcolor: COULEUR_FOND, color: COULEUR, fontWeight: 600 }} />
+                ))}
+              </Stack>
+            ) : (
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                {resultat.message || "Aucun symptôme correspondant n'a été trouvé dans notre base de données."}
+              </Alert>
+            )}
+
+            {nies.length > 0 && (
+              <Typography variant="caption" color="#64748b" display="block" sx={{ mt: 1 }}>
+                Symptômes exclus (niés dans le texte) : {nies.join(", ")}
+              </Typography>
+            )}
+          </Box>
+
+          {/* Médicaments associés */}
+          {medicaments.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight="700" gutterBottom color="#0f172a">
+                Médicaments pouvant causer ces effets :
+              </Typography>
+              <List sx={{ bgcolor: "#f8fafc", borderRadius: 2, border: "1px solid #e2e8f0" }}>
+                {medicaments.map((item, index) => (
+                  <ListItem key={index} divider={index !== medicaments.length - 1}>
+                    <ListItemText
+                      primary={item.code_amm ? `${item.medicament} (${item.code_amm})` : item.medicament}
+                      secondary={
+                        `Lié au symptôme : ${item.symptome}` +
+                        (item.frequence_pct != null ? ` — fréquence : ${item.frequence_pct} %` : "")
+                      }
+                      primaryTypographyProps={{ fontWeight: 600, fontSize: "0.9rem" }}
+                      secondaryTypographyProps={{ fontSize: "0.8rem" }}
+                    />
+                    <Chip
+                      label={item.est_grave ? "Effet Grave" : "Effet Bénin"}
+                      color={item.est_grave ? "error" : "warning"}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+
+          <Typography variant="caption" color="#64748b" display="block" sx={{ mt: 3, fontStyle: "italic" }}>
+            Avertissement : Cet outil est une aide à la décision basée sur les données de l'ontologie. Il ne remplace en aucun cas un avis médical professionnel.
+          </Typography>
+        </Paper>
+      )}
+    </Box>
+  );
+}
+
+// ============================================================================
+// ONGLET 1 : EFFETS SECONDAIRES (Inchangé)
 // ============================================================================
 function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
   const [recherche, setRecherche] = useState("");
@@ -451,7 +635,7 @@ function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
 }
 
 // ============================================================================
-// ONGLET 2 : CONTRE-INDICATIONS
+// ONGLET 2 : CONTRE-INDICATIONS (Inchangé)
 // ============================================================================
 function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPatho, setSparql, setMessage }) {
   const [recherche, setRecherche] = useState("");
@@ -808,7 +992,7 @@ function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPa
 }
 
 // ============================================================================
-// ONGLET 3 : INTERACTIONS
+// ONGLET 3 : INTERACTIONS (Inchangé)
 // ============================================================================
 function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
   const [recherche, setRecherche] = useState("");
