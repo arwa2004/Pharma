@@ -57,6 +57,20 @@ const QUESTIONS_RAPIDES = [
       "Combien de patients sont enregistrés ?",
     ],
   },
+    {
+    categorie: "Prescriptions & Professionnels (Membre D)",
+    questions: [
+      "Affiche toutes les prescriptions",
+      "Quelles prescriptions a reçues Karim ?",
+      "Prescriptions du docteur Trabelsi",
+      "Quelles prescriptions contiennent de la Warfarine ?",
+      "Quelles prescriptions ont une interaction médicamenteuse ?",
+      "Quelles prescriptions n'ont pas été délivrées ?",
+      "Quelles prescriptions durent plus de 20 jours ?",
+      "Nombre de prescriptions par docteur",
+      "Quel médicament est le plus prescrit ?",
+    ],
+  },
 ];
 
 export default function Assistant() {

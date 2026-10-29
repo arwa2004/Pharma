@@ -11,6 +11,8 @@ import nlp_engine
 import nlp_patients     # Enregistre automatiquement les intentions du domaine Patients (C)
 import nlp_medicaments  # Enregistre automatiquement les intentions du domaine Médicaments (A)
 
+import nlp_complements      # voir la remarque plus bas
+import nlp_prescriptions    # Membre D
 router = APIRouter(prefix="/ask", tags=["Assistant NLP"])
 
 
@@ -59,6 +61,20 @@ def exemples_questions() -> Dict[str, Any]:
                     "Qui est le médecin de Sami ?",
                     "Quels patients ont plus de 60 ans ?",
                     "Donne-moi la liste de tous les patients",
+                ],
+            },
+                        {
+                "titre": "Prescriptions & Professionnels (Membre D)",
+                "questions": [
+                    "Affiche toutes les prescriptions",
+                    "Quelles prescriptions a reçues Karim ?",
+                    "Prescriptions du docteur Trabelsi",
+                    "Quelles prescriptions contiennent de la Warfarine ?",
+                    "Quelles prescriptions ont une interaction médicamenteuse ?",
+                    "Quelles prescriptions n'ont pas été délivrées ?",
+                    "Quelles prescriptions durent plus de 20 jours ?",
+                    "Nombre de prescriptions par docteur",
+                    "Quel médicament est le plus prescrit ?",
                 ],
             },
         ]
