@@ -12,7 +12,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PeopleIcon from "@mui/icons-material/People";
 import { api } from "../api.js";
-
+import AssignmentIcon from "@mui/icons-material/Assignment";
 export default function Dashboard() {
   const [chargement, setChargement] = useState(true);
   const [stats, setStats] = useState({ polymediques: [], pathologiesMultiples: [], interactions: [] });
@@ -63,10 +63,16 @@ export default function Dashboard() {
           <Typography variant="h6" fontWeight="bold" color="#065f46">Tableau de Vigilance Clinique</Typography>
           <Chip label="Requête SPARQL HAVING" color="success" size="small" variant="outlined" />
         </Stack>
-        <Button variant="outlined" color="success" size="small" startIcon={<PeopleIcon fontSize="small" />}
-          onClick={() => navigate("/patients")}>
-          Tous les dossiers
-        </Button>
+        <Stack direction="row" spacing={1}>
+  <Button variant="outlined" color="success" size="small" startIcon={<PeopleIcon fontSize="small" />}
+    onClick={() => navigate("/patients")}>
+    Tous les dossiers
+  </Button>
+  <Button variant="contained" color="success" size="small" startIcon={<AssignmentIcon fontSize="small" />}
+    onClick={() => navigate("/prescriptions")}>
+    Prescriptions
+  </Button>
+</Stack>
       </Stack>
 
       {/* Recherche rapide */}
@@ -159,6 +165,9 @@ export default function Dashboard() {
                   {inter.libelle ? ` : ${inter.libelle}` : ""} (Patient : {inter.nom})
                 </Typography>
               ))}
+              <Button component={Link} to="/prescriptions" size="small" color="error" variant="outlined" sx={{ mt: 1 }}>
+  Voir les prescriptions
+</Button>
             </Alert>
           )}
 
