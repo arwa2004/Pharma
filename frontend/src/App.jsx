@@ -3,6 +3,7 @@ import Layout from "./layouts/Layout.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Patients from "./pages/Patients.jsx";
 import PatientDetail from "./pages/PatientDetail.jsx";
+import Pathologies from "./pages/Pathologies.jsx";
 import Medicaments from "./pages/Medicaments.jsx";
 import MedicamentDetail from "./pages/MedicamentDetail.jsx";
 import Assistant from "./pages/Assistant.jsx";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="medicaments/:id" element={<MedicamentDetail />} />
         <Route path="patients" element={<Patients />} />
         <Route path="patients/:id" element={<PatientDetail />} />
+        <Route path="pathologies" element={<Pathologies />} />
         <Route path="vigilance" element={<Dashboard />} />
         <Route path="risques" element={<Risques />} />
         <Route path="prescriptions" element={<Prescriptions />} />

@@ -49,6 +49,10 @@ class PatientIn(BaseModel):
     age: int = Field(..., ge=0, le=120)
 
 
+class SparqlQueryIn(BaseModel):
+    query: str
+
+
 class PatientUpdate(BaseModel):
     nom: Optional[str] = Field(None, min_length=1)
     prenom: Optional[str] = None
@@ -139,6 +143,27 @@ SELECT DISTINCT ?id ?nom ?typeLien ?element WHERE {
     return _reponse(fc.select(requete), requete)
 
 
+@router.get("/alertes/contre-indications-tous")
+def alertes_contre_indications_toutes():
+    """Requête croisée : trouve tous les patients prenant un médicament contre-indiqué pour leur pathologie."""
+    requete = """
+SELECT DISTINCT ?id ?nomPatient ?med ?nomMed ?pathologie ?nomPathologie ?ci ?libelleCI WHERE {
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ;
+     :prendMedicament ?m ;
+     :souffreDe ?path .
+  ?m :aContreIndication ?ci .
+  ?ci :concernePathologie ?path .
+  OPTIONAL { ?m :nomCommercial ?nomMed }
+  OPTIONAL { ?path :libelle ?nomPathologie }
+  OPTIONAL { ?ci :libelle ?libelleCI }
+  BIND(STRAFTER(STR(?p), "#") AS ?id)
+  BIND(STRAFTER(STR(?m), "#") AS ?med)
+  BIND(STRAFTER(STR(?path), "#") AS ?pathologie)
+  BIND(STRAFTER(STR(?ci), "#") AS ?ci)
+} ORDER BY ?nomPatient"""
+    return _reponse(fc.select(requete), requete)
+
+
 @router.get("/alertes/interactions-tous")
 def alertes_interactions_toutes():
     """RequÃªte croisÃ©e : trouve tous les patients prenant des mÃ©dicaments en interaction."""
@@ -146,7 +171,9 @@ def alertes_interactions_toutes():
 SELECT DISTINCT ?id ?nom ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nom ;
      :prendMedicament ?a , ?b .
-  ?i :impliqueMedicament ?a , ?b .
+  { ?a :participeInteraction ?i . ?b :participeInteraction ?i . }
+  UNION
+  { ?i :impliqueMedicament ?a , ?b . }
   FILTER(STR(?a) < STR(?b))
   OPTIONAL { ?a :nomCommercial ?nomMedA }
   OPTIONAL { ?b :nomCommercial ?nomMedB }
@@ -264,7 +291,9 @@ def interactions_patient(id_patient: IdPatient):
     requete = f"""
 SELECT DISTINCT ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {{
   :{id_patient} :prendMedicament ?a , ?b .
-  ?i :impliqueMedicament ?a , ?b .
+  {{ ?a :participeInteraction ?i . ?b :participeInteraction ?i . }}
+  UNION
+  {{ ?i :impliqueMedicament ?a , ?b . }}
   FILTER(STR(?a) < STR(?b))
   OPTIONAL {{ ?a :nomCommercial ?nomMedA }}
   OPTIONAL {{ ?b :nomCommercial ?nomMedB }}
@@ -307,13 +336,30 @@ SELECT ?id ?nom ?prenom WHERE {{
   OPTIONAL {{ ?m :nom ?nom }}
   OPTIONAL {{ ?m :prenom ?prenom }}
   BIND(STRAFTER(STR(?m), "#") AS ?id)
-}} LIMIT 1""")
+}} LIMIT 1""")    # Détection des contre-indications croisées (Médicament vs Pathologie)
+    contre_indications = fc.select(f"""
+SELECT DISTINCT ?med ?nomMed ?pathologie ?nomPathologie ?ci ?libelleCI WHERE {{
+  :{id_patient} :prendMedicament ?m ;
+                :souffreDe ?path .
+  ?m :aContreIndication ?ci .
+  ?ci :concernePathologie ?path .
+  OPTIONAL {{ ?m :nomCommercial ?nomMed }}
+  OPTIONAL {{ ?path :libelle ?nomPathologie }}
+  OPTIONAL {{ ?ci :libelle ?libelleCI }}
+  BIND(STRAFTER(STR(?m), "#") AS ?med)
+  BIND(STRAFTER(STR(?path), "#") AS ?pathologie)
+  BIND(STRAFTER(STR(?ci), "#") AS ?ci)
+}}""")
+
+
 
     # DÃ©tection des interactions croisÃ©es
     interactions = fc.select(f"""
 SELECT DISTINCT ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {{
   :{id_patient} :prendMedicament ?a , ?b .
-  ?i :impliqueMedicament ?a , ?b .
+  {{ ?a :participeInteraction ?i . ?b :participeInteraction ?i . }}
+  UNION
+  {{ ?i :impliqueMedicament ?a , ?b . }}
   FILTER(STR(?a) < STR(?b))
   OPTIONAL {{ ?a :nomCommercial ?nomMedA }}
   OPTIONAL {{ ?b :nomCommercial ?nomMedB }}
@@ -330,6 +376,7 @@ SELECT DISTINCT ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {{
         "pathologies": pathologies,
         "medecin": medecin[0] if medecin else None,
         "interactions": interactions,
+        "contre_indications": contre_indications,
         "polymedique": len(medicaments) >= 3,
         "pathologie_multiple": len(pathologies) >= 2,
     }
@@ -477,3 +524,22 @@ def retirer_medecin_patient(
     requete = f"DELETE WHERE {{ :{id_patient} :estSuiviPar ?ancien }}"
     fc.update(requete)
     return _reponse({"patient": id_patient, "action": "medecin_retire"}, requete)
+
+
+@router.post("/sparql-test")
+def executer_sparql_test(body: SparqlQueryIn):
+    """Exécute une requête SPARQL réelle (SELECT, ASK, DESCRIBE) pour la validation et soutenance."""
+    q = body.query.strip()
+    upper = q.upper()
+    try:
+        if upper.startswith("ASK") or "\nASK" in upper:
+            res = fc.ask(q)
+            return {"type": "ASK", "data": res, "sparql": q}
+        elif upper.startswith("DESCRIBE") or "\nDESCRIBE" in upper or upper.startswith("CONSTRUCT"):
+            res = fc.describe(q)
+            return {"type": "DESCRIBE", "data": res, "sparql": q}
+        else:
+            res = fc.select(q)
+            return {"type": "SELECT", "data": res, "sparql": q}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur d'exécution SPARQL : {e}")

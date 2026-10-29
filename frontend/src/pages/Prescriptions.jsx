@@ -254,7 +254,7 @@ export default function Prescriptions() {
                 </Typography>
                 <Stack spacing={0.75}>
                   {alertes.map((a, i) => (
-                    <Stack key={i} direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Stack key={i} direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
                       <Chip size="small" label={a.prescription} sx={{ bgcolor: "#fff", fontWeight: 700, color: C.rougeFonce }} />
                       <Typography variant="body2" sx={{ color: C.rougeFonce }}>
                         <strong>{a.medicament1}</strong> + <strong>{a.medicament2}</strong>
@@ -407,7 +407,7 @@ export default function Prescriptions() {
                       <TableCell sx={cellBody}>Dr {p.medecin.nom}</TableCell>
 
                       <TableCell>
-                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap" }}>
                           {p.medicaments.map((m) => (
                             <Chip key={m.id} size="small" label={m.nom} variant="outlined"
                               color={aRisque ? "error" : "success"} />
@@ -495,7 +495,7 @@ export default function Prescriptions() {
 
       {/* ---------- Dialogue création / modification ---------- */}
       <Dialog open={openForm} onClose={() => setOpenForm(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: 2 } }}>
+        slotProps={{ paper: { sx: { borderRadius: 2 } } }}>
         <DialogTitle sx={{ pb: 1 }}>
           <Typography sx={{ color: C.vert, fontWeight: "bold", fontSize: "1rem" }}>
             {editId ? `Modifier ${editId}` : "Nouvelle prescription"}
@@ -571,7 +571,7 @@ export default function Prescriptions() {
       </Dialog>
 
       {/* ---------- Dialogue de suppression ---------- */}
-      <Dialog open={Boolean(aSupprimer)} onClose={() => setASupprimer(null)} PaperProps={{ sx: { borderRadius: 2 } }}>
+      <Dialog open={Boolean(aSupprimer)} onClose={() => setASupprimer(null)} slotProps={{ paper: { sx: { borderRadius: 2 } } }}>
         <DialogTitle sx={{ fontSize: "1rem", fontWeight: "bold" }}>Supprimer cette prescription ?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">

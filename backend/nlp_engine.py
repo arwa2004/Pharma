@@ -133,6 +133,7 @@ ENTITES_REQUISES: Dict[str, List[Tuple[str, ...]]] = {
     "medecin_patient": [("nom",)],
     "verifier_polymedique_ask": [("nom",)],
     "patients_par_medicament": [("medicament", "molecule")],
+    "patients_par_pathologie": [("pathologie",)],
 }
 
 
@@ -149,6 +150,12 @@ LABORATOIRES_CONNUS = [
     "glaxosmithkline", "opalia", "recordati",
 ]
 # marque commerciale -> molécule
+PATHOLOGIES_CONNUES = [
+    "diabete", "diabete de type 2", "hypertension", "hypertension arterielle",
+    "thrombose", "thrombose veineuse", "fievre", "douleur", "infection",
+    "infection bacterienne", "insuffisance renale", "insuffisance hepatique",
+    "ulcere", "ulcere gastrique",
+]
 MARQUES = {
     "clamoxyl": "amoxicilline", "advil": "ibuprofene", "glucophage": "metformine",
     "coumadine": "warfarine", "doliprane": "paracetamol", "mopral": "omeprazole",
@@ -174,6 +181,7 @@ SELECT DISTINCT ?type ?val ?mol WHERE {
           OPTIONAL { ?x (:contientMolecule|:contientPrincipeActif)/:nom ?mol } }
   UNION { ?x (:contientMolecule|:contientPrincipeActif)/:nom ?val . BIND("molecule" AS ?type) }
   UNION { ?x :estFabriquePar ?l . ?l :nom ?val . BIND("laboratoire" AS ?type) }
+  UNION { ?x a/rdfs:subClassOf* :Pathologie ; :libelle ?val . BIND("pathologie" AS ?type) }
 }"""
 
 
@@ -191,6 +199,7 @@ class Lexique:
         self.medicaments: Set[str] = set(MARQUES)
         self.molecules: Set[str] = set(MOLECULES_CONNUES)
         self.laboratoires: Set[str] = set(LABORATOIRES_CONNUS)
+        self.pathologies: Set[str] = set(PATHOLOGIES_CONNUES)
         self.mol_vers_meds: Dict[str, Set[str]] = {}
         self.source = "statique"
         self.version = 0
@@ -223,12 +232,16 @@ class Lexique:
                 n = normaliser_texte(val)
                 if len(n) >= 3:
                     self.laboratoires.add(n)
+            elif t == "pathologie":
+                n = normaliser_texte(val)
+                if len(n) >= 3:
+                    self.pathologies.add(n)
         self.source = "ontologie"
         self.version += 1
         self._re_masque = None
 
     def tous_les_termes(self) -> Set[str]:
-        return (self.patients | self.medicaments | self.molecules | self.laboratoires) - {""}
+        return (self.patients | self.medicaments | self.molecules | self.laboratoires | self.pathologies) - {""}
 
     def regex_masque(self) -> Optional[re.Pattern]:
         if self._re_masque is None:
@@ -335,7 +348,7 @@ MOTS_BANNIS = {
     "maladie", "forme", "voie", "ordonnance", "quels", "quel", "quelle", "quelles", "combien",
     "comment", "est", "qui", "que", "donne", "liste", "afficher",
 }
-_CLES_TEXTE = ("molecule", "medicament", "laboratoire", "nom")
+_CLES_TEXTE = ("molecule", "medicament", "laboratoire", "nom", "pathologie")
 
 
 def _trouver(termes: Set[str], qn: str) -> List[str]:
@@ -384,6 +397,9 @@ def extraire_entites(doc, question: str) -> Dict[str, Any]:
         ent["laboratoire"] = labs[0]
     if formes:
         ent["forme"] = formes[0]
+    paths = _trouver(lex.pathologies, qn)
+    if paths:
+        ent["pathologie"] = paths[0]
 
     # Patient : lexique d'abord, puis nom propre inconnu en majuscule, puis NER spaCy (PER)
     connus_autres = lex.molecules | lex.medicaments | lex.laboratoires | set(MARQUES)

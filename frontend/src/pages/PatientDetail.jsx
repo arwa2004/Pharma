@@ -23,6 +23,8 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import SchoolIcon from "@mui/icons-material/School";
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
+import PatientKnowledgeGraph from "../components/PatientKnowledgeGraph.jsx";
+import SparqlDemonstratorModal from "../components/SparqlDemonstratorModal.jsx";
 
 function getInitials(prenom, nom) {
   const p = (prenom || "").trim()[0] || "";
@@ -50,6 +52,7 @@ export default function PatientDetail() {
   const [dialogAddMed, setDialogAddMed] = useState(false);
   const [dialogAddPatho, setDialogAddPatho] = useState(false);
   const [dialogSetMedecin, setDialogSetMedecin] = useState(false);
+  const [openSparqlLab, setOpenSparqlLab] = useState(false);
 
   // Sélections
   const [formulaire, setFormulaire] = useState({ nom: "", prenom: "", age: "" });
@@ -228,6 +231,23 @@ export default function PatientDetail() {
         >
           Retour à la liste des patients
         </Button>
+
+        <Button
+          variant="contained"
+          startIcon={<SchoolIcon />}
+          onClick={() => setOpenSparqlLab(true)}
+          sx={{
+            bgcolor: "#065f46",
+            "&:hover": { bgcolor: "#044e39" },
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            textTransform: "none",
+            borderRadius: 2,
+            boxShadow: "0 2px 8px rgba(6,95,70,0.2)",
+          }}
+        >
+          Laboratoire de Requêtes SPARQL (pour la soutenance)
+        </Button>
       </Stack>
 
       {erreur && (
@@ -310,7 +330,7 @@ export default function PatientDetail() {
               </Stack>
 
               {/* Badges d'état et Boutons d'action */}
-              <Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexWrap: "wrap" }}>
                 {fiche.polymedique && (
                   <Chip
                     size="medium"
@@ -353,6 +373,9 @@ export default function PatientDetail() {
               </Stack>
             </Stack>
           </Paper>
+
+          {/* GRAPHE DE CONNAISSANCES RDF INTERACTIF */}
+          <PatientKnowledgeGraph fiche={fiche} />
 
           {/* Grille principale 2 Colonnes */}
           <Grid container spacing={3}>
@@ -660,6 +683,51 @@ export default function PatientDetail() {
                   )}
                 </Paper>
 
+                {/* 3 bis. Contre-indications directes (Valeur ajoutée clinique) */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    border: fiche.contre_indications?.length > 0 ? "2px solid #fdba74" : "1px solid #e2e8f0",
+                    bgcolor: "#ffffff",
+                  }}
+                >
+                  <Typography variant="h6" color="#0f172a" sx={{ mb: 2 }}>
+                    Contre-indications (Médicament / Pathologie)
+                  </Typography>
+
+                  {fiche.contre_indications?.length > 0 ? (
+                    <Alert
+                      severity="warning"
+                      icon={<ReportProblemIcon />}
+                      sx={{
+                        borderRadius: 2.5,
+                        border: "1px solid #f97316",
+                        bgcolor: "#fff7ed",
+                        p: 1.5,
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#9a3412" }}>
+                        Contre-indication directe détectée !
+                      </Typography>
+                      {fiche.contre_indications.map((ci, idx) => (
+                        <Typography key={idx} variant="body2" sx={{ display: "block", mt: 0.75, color: "#7c2d12" }}>
+                          • Le médicament <strong>{ci.nomMed || ci.med}</strong> est contre-indiqué pour la pathologie <strong>{ci.nomPathologie || ci.pathologie}</strong>.
+                          {ci.libelleCI ? ` (${ci.libelleCI})` : ""}
+                        </Typography>
+                      ))}
+                    </Alert>
+                  ) : (
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, bgcolor: "#f0fdf4", borderRadius: 2.5 }}>
+                      <CheckCircleOutlineIcon sx={{ color: "#16a34a", fontSize: 24 }} />
+                      <Typography variant="body1" sx={{ color: "#166534", fontWeight: 600 }}>
+                        Aucune contre-indication active entre le traitement et les pathologies.
+                      </Typography>
+                    </Stack>
+                  )}
+                </Paper>
+
                 {/* 4. Risques d'association */}
                 <Paper
                   elevation={0}
@@ -726,6 +794,24 @@ export default function PatientDetail() {
                   </Typography>
                   <Stack spacing={1.25}>
                     <Button
+                      variant="contained"
+                      startIcon={<SchoolIcon />}
+                      onClick={() => setOpenSparqlLab(true)}
+                      sx={{
+                        fontSize: "0.86rem",
+                        bgcolor: "#065f46",
+                        "&:hover": { bgcolor: "#044e39" },
+                        color: "#ffffff",
+                        fontWeight: 700,
+                        justifyContent: "flex-start",
+                        py: 1.1,
+                        borderRadius: 2,
+                        mb: 0.5,
+                      }}
+                    >
+                      Ouvrir le Laboratoire SPARQL (8 Requêtes Réelles)
+                    </Button>
+                    <Button
                       variant="outlined"
                       startIcon={<HelpOutlineIcon />}
                       onClick={handleTesterAsk}
@@ -771,7 +857,7 @@ export default function PatientDetail() {
       )}
 
       {/* Modal Modifier Informations */}
-      <Dialog open={dialogModif} onClose={() => setDialogModif(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={dialogModif} onClose={() => setDialogModif(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>Modifier le patient</DialogTitle>
         <DialogContent sx={{ p: 3 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -791,7 +877,7 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Modal Supprimer Patient */}
-      <Dialog open={dialogSuppr} onClose={() => setDialogSuppr(false)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={dialogSuppr} onClose={() => setDialogSuppr(false)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ color: "#dc2626", fontSize: "1.05rem", fontWeight: 700 }}>Supprimer le dossier ?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: "0.9rem" }}>
@@ -805,7 +891,7 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Modal Associer Médicament */}
-      <Dialog open={dialogAddMed} onClose={() => setDialogAddMed(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={dialogAddMed} onClose={() => setDialogAddMed(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>Associer un médicament</DialogTitle>
         <DialogContent sx={{ p: 3 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -830,7 +916,7 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Modal Associer Maladie */}
-      <Dialog open={dialogAddPatho} onClose={() => setDialogAddPatho(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={dialogAddPatho} onClose={() => setDialogAddPatho(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>Associer une maladie</DialogTitle>
         <DialogContent sx={{ p: 3 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -855,7 +941,7 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Modal Assigner Médecin */}
-      <Dialog open={dialogSetMedecin} onClose={() => setDialogSetMedecin(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={dialogSetMedecin} onClose={() => setDialogSetMedecin(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>Assigner un médecin traitant</DialogTitle>
         <DialogContent sx={{ p: 3 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>

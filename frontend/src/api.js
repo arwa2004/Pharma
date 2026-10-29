@@ -84,6 +84,13 @@ export const api = {
   referentielPathologies: () => request("/patients/referentiel/pathologies"),
   referentielMedecins: () => request("/patients/referentiel/medecins"),
 
+  // CRUD Pathologies (Domaine C)
+  listerPathologies: (q = "") => request("/pathologies" + (q ? "?q=" + encodeURIComponent(q) : "")),
+  fichePathologie: (id) => request("/pathologies/" + id),
+  creerPathologie: (data) => request("/pathologies", { method: "POST", body: JSON.stringify(data) }),
+  modifierPathologie: (id, data) => request("/pathologies/" + id, { method: "PUT", body: JSON.stringify(data) }),
+  supprimerPathologie: (id) => request("/pathologies/" + id, { method: "DELETE" }),
+
   ajouterMedicament: (idPatient, idMed) => request(`/patients/${idPatient}/medicaments/${idMed}`, { method: "POST" }),
   supprimerMedicament: (idPatient, idMed) => request(`/patients/${idPatient}/medicaments/${idMed}`, { method: "DELETE" }),
   ajouterPathologie: (idPatient, idPatho) => request(`/patients/${idPatient}/pathologies/${idPatho}`, { method: "POST" }),
@@ -94,6 +101,9 @@ export const api = {
   askPolymedique: (idPatient) => request(`/patients/${idPatient}/ask-polymedique`),
   describeRdf: (idPatient) => request(`/patients/${idPatient}/describe`),
   interactionsPatient: (idPatient) => request(`/patients/${idPatient}/interactions`),
+  contreIndicationsPatient: (idPatient) => request(`/patients/${idPatient}/contre-indications`),
+  alertesContreIndications: () => request("/patients/alertes/contre-indications-tous"),
+  executerSparql: (query) => request("/patients/sparql-test", { method: "POST", body: { query } }),
 
   // ---------- Module Risques (membre B) ----------
   referentielMedicamentsRisques: () => request("/risques/referentiel/medicaments"),

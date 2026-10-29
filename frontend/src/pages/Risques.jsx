@@ -63,7 +63,7 @@ export default function Risques() {
           value={onglet}
           onChange={(_, v) => setOnglet(v)}
           variant="fullWidth"
-          TabIndicatorProps={{ style: { backgroundColor: COULEUR } }}
+          slotProps={{ indicator: { style: { backgroundColor: COULEUR } } }}
           sx={{
             bgcolor: "#ffffff",
             "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.85rem", py: 1.5 },
@@ -256,7 +256,7 @@ function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Grid>
 
       <Paper elevation={0} sx={{ p: 1.5, mb: 2, borderRadius: 2.5, border: "1px solid #e2e8f0" }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
           <TextField
             size="small" placeholder="Rechercher par libellé..." value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
@@ -348,7 +348,7 @@ function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
       </TableContainer>
 
       {/* Dialog création / modification */}
-      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ bgcolor: COULEUR, color: "white", py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           {formulaire?.id ? `Modifier :${formulaire.id}` : "Nouvel Effet Secondaire (INSERT DATA)"}
         </DialogTitle>
@@ -385,7 +385,7 @@ function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Dialog>
 
       {/* Dialog suppression */}
-      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ color: "#dc2626", fontSize: "0.95rem", fontWeight: 600 }}>Confirmer la suppression ?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: "0.82rem" }}>
@@ -399,7 +399,7 @@ function OngletEffets({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Dialog>
 
       {/* Dialog gestion des liens médicaments */}
-      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           Médicaments liés à :{gestion?.id} (<code>:aEffetSecondaire</code>)
           <IconButton onClick={() => setGestion(null)} sx={{ position: "absolute", right: 10, top: 10 }}><CloseIcon fontSize="small" /></IconButton>
@@ -585,7 +585,7 @@ function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPa
       </Grid>
 
       <Paper elevation={0} sx={{ p: 1.5, mb: 2, borderRadius: 2.5, border: "1px solid #e2e8f0" }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
           <TextField
             size="small" placeholder="Rechercher par libellé..." value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
@@ -673,7 +673,7 @@ function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPa
       </TableContainer>
 
       {/* Dialog création / modification */}
-      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ bgcolor: COULEUR, color: "white", py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           {formulaire?.id ? `Modifier :${formulaire.id}` : "Nouvelle Contre-Indication (INSERT DATA)"}
         </DialogTitle>
@@ -720,7 +720,7 @@ function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPa
       </Dialog>
 
       {/* Dialog suppression */}
-      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ color: "#dc2626", fontSize: "0.95rem", fontWeight: 600 }}>Confirmer la suppression ?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: "0.82rem" }}>
@@ -734,7 +734,7 @@ function OngletContreIndications({ refMedicaments, refPathologies, nomMed, nomPa
       </Dialog>
 
       {/* Dialog gestion des liens */}
-      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           Liens de :{gestion?.id}
           <IconButton onClick={() => setGestion(null)} sx={{ position: "absolute", right: 10, top: 10 }}><CloseIcon fontSize="small" /></IconButton>
@@ -915,7 +915,7 @@ function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Grid>
 
       <Paper elevation={0} sx={{ p: 1.5, mb: 2, borderRadius: 2.5, border: "1px solid #e2e8f0" }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
           <TextField
             size="small" placeholder="Rechercher par libellé..." value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
@@ -962,7 +962,7 @@ function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
                   <Typography variant="caption" sx={{ color: "#94a3b8", fontFamily: "monospace", fontSize: "0.7rem" }}>:{i.id}</Typography>
                 </TableCell>
                 <TableCell sx={{ py: 1.1 }}>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap" }}>
                     {(i.medicaments || "").split(", ").filter(Boolean).map((idMed) => (
                       <Chip key={idMed} size="small" icon={<MedicationOutlinedIcon sx={{ fontSize: "14px !important" }} />}
                         label={nomMed(idMed)} sx={{ bgcolor: COULEUR_FOND, color: COULEUR, fontSize: "0.72rem", height: 22 }} />
@@ -995,7 +995,7 @@ function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
       </TableContainer>
 
       {/* Dialog création / modification */}
-      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!formulaire} onClose={() => setFormulaire(null)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ bgcolor: COULEUR, color: "white", py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           {formulaire?.id ? `Modifier :${formulaire.id}` : "Nouvelle Interaction (INSERT DATA)"}
         </DialogTitle>
@@ -1033,7 +1033,7 @@ function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Dialog>
 
       {/* Dialog suppression */}
-      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!aSupprimer} onClose={() => setASupprimer(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ color: "#dc2626", fontSize: "0.95rem", fontWeight: 600 }}>Confirmer la suppression ?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: "0.82rem" }}>
@@ -1047,7 +1047,7 @@ function OngletInteractions({ refMedicaments, nomMed, setSparql, setMessage }) {
       </Dialog>
 
       {/* Dialog gestion des participants */}
-      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!gestion} onClose={() => setGestion(null)} fullWidth maxWidth="sm" slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ py: 1.75, fontSize: "0.95rem", fontWeight: 600 }}>
           Médicaments impliqués dans :{gestion?.id} (<code>:impliqueMedicament</code>)
           <IconButton onClick={() => setGestion(null)} sx={{ position: "absolute", right: 10, top: 10 }}><CloseIcon fontSize="small" /></IconButton>

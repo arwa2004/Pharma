@@ -15,6 +15,8 @@ import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
+import SparqlDemonstratorModal from "../components/SparqlDemonstratorModal.jsx";
+import SchoolIcon from "@mui/icons-material/School";
 
 function getInitials(prenom, nom) {
   const p = (prenom || "").trim()[0] || "";
@@ -26,7 +28,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [chargement, setChargement] = useState(true);
-  const [stats, setStats] = useState({ polymediques: [], pathologiesMultiples: [], interactions: [] });
+  const [stats, setStats] = useState({ polymediques: [], pathologiesMultiples: [], interactions: [], contreIndications: [] });
+  const [openSparqlLab, setOpenSparqlLab] = useState(false);
   const [sparql, setSparql] = useState("");
   const [filtreActif, setFiltreActif] = useState("tous"); // "tous", "poly", "patho", "inter"
   const [recherche, setRecherche] = useState("");
@@ -36,15 +39,17 @@ export default function Dashboard() {
     async function chargerDonnees() {
       try {
         setChargement(true);
-        const [repPoly, repPatho, repInter] = await Promise.all([
+        const [repPoly, repPatho, repInter, repCi] = await Promise.all([
           api.get("/patients/polymedies"),
           api.get("/patients/pathologie-multiple"),
           api.get("/patients/alertes/interactions-tous"),
+          api.get("/patients/alertes/contre-indications-tous"),
         ]);
         setStats({
           polymediques: repPoly.data || [],
           pathologiesMultiples: repPatho.data || [],
           interactions: repInter.data || [],
+          contreIndications: repCi.data || [],
         });
         // Garder la requête SPARQL la plus pertinente pour le mode soutenance
         setSparql(repPoly.sparql || repInter.sparql || "");
@@ -128,10 +133,28 @@ export default function Dashboard() {
             Surveillance des traitements à risque, comorbidités et interactions
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<PeopleAltOutlinedIcon />}
-          onClick={() => navigate("/patients")}
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="contained"
+            startIcon={<SchoolIcon />}
+            onClick={() => setOpenSparqlLab(true)}
+            sx={{
+              bgcolor: "#065f46",
+              "&:hover": { bgcolor: "#044e39" },
+              borderRadius: 2.5,
+              px: 2.5,
+              py: 0.9,
+              fontSize: "0.88rem",
+              fontWeight: 700,
+              textTransform: "none",
+            }}
+          >
+            Laboratoire SPARQL Soutenance
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PeopleAltOutlinedIcon />}
+            onClick={() => navigate("/patients")}
           sx={{
             borderColor: "#cbd5e1",
             color: "#475569",
@@ -145,6 +168,7 @@ export default function Dashboard() {
         >
           Tous les patients
         </Button>
+        </Stack>
       </Stack>
 
       {/* 3 Cartes KPI synthétiques identiques à la page Patients */}
@@ -294,7 +318,7 @@ export default function Dashboard() {
           bgcolor: "#ffffff",
         }}
       >
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap" }}>
           <Stack direction="row" spacing={1}>
             <Button
               variant={filtreActif === "tous" ? "contained" : "outlined"}
@@ -523,7 +547,7 @@ export default function Dashboard() {
 
                     {/* Situation */}
                     <TableCell sx={{ py: 1.5 }}>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
                         {poly && (
                           <Chip
                             size="small"
@@ -608,6 +632,10 @@ export default function Dashboard() {
 
       {/* Requête SPARQL */}
       <SparqlBox sparql={sparql} />
+      <SparqlDemonstratorModal
+        open={openSparqlLab}
+        onClose={() => setOpenSparqlLab(false)}
+      />
     </Box>
   );
 }

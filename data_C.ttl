@@ -83,6 +83,12 @@
 :Med_Warfarine :participeInteraction :Inter_Warfarine_Aspirine .
 :Med_Aspirine  :participeInteraction :Inter_Warfarine_Aspirine .
 
+# Liens sémantiques Contre-Indications -> Pathologies (Raisonnement croisé)
+# Ces triplets permettent la requête de contre-indication croisée (Valeur Ajoutée)
+:CI_UlcereEvolutif :concernePathologie :UlcereGastrique .
+:CI_InsuffisanceHepatiqueSevere :concernePathologie :InsuffisanceHepatique .
+:CI_AllergiePenicilline :concernePathologie :InfectionBacterienne .
+
 
 #################################################################
 #          INDIVIDUS DU DOMAINE PATIENTS (10 CAS LIMITES)
@@ -107,12 +113,12 @@
     :souffreDe :ThromboseVeineuse ;
     :estSuiviPar :Dr_BenAmor .
 
-# 3. Pat_Hedi : 1 médicament, mais 3 pathologies (Comorbidités multiples)
+# 3. Pat_Hedi : 2 médicaments, 3 pathologies (Comorbidités multiples + Contre-indication directe)
 :Pat_Hedi a :Patient ;
     :nom "Gharbi" ;
     :prenom "Hedi" ;
     :age 72 ;
-    :prendMedicament :Med_Amoxicilline ;
+    :prendMedicament :Med_Amoxicilline, :Med_Ibuprofene ;
     :souffreDe :InfectionBacterienne, :UlcereGastrique, :InsuffisanceHepatique ;
     :estSuiviPar :Dr_Karray .
 

@@ -15,7 +15,7 @@ const LARGEUR_MENU = 225;
 
 const MENU = [
   { chemin: "/patients", titre: "Patients", icon: <PeopleIcon /> },
-  { chemin: "/vigilance", titre: "Alertes et suivi", icon: <NotificationsActiveIcon /> },
+  { chemin: "/pathologies", titre: "Maladies", icon: <LocalHospitalIcon /> },
   { chemin: "/medicaments", titre: "Médicaments", icon: <MedicationIcon /> },
   { chemin: "/risques", titre: "Risques des médicaments", icon: <WarningAmberIcon /> },
   { chemin: "/prescriptions", titre: "Prescriptions", icon: <AssignmentIcon /> },

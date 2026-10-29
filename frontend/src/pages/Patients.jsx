@@ -318,9 +318,9 @@ export default function Patients() {
           bgcolor: "#ffffff",
         }}
       >
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap" }}>
           {/* Boutons de sélection rapide */}
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
             <Button
               variant={vue === "tous" ? "contained" : "outlined"}
               onClick={() => setVue("tous")}
@@ -549,7 +549,7 @@ export default function Patients() {
 
                     {/* Situation */}
                     <TableCell sx={{ py: 1.5 }}>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
                         {poly && (
                           <Chip
                             size="small"
@@ -671,7 +671,7 @@ export default function Patients() {
         onClose={() => setFormulaire(null)}
         fullWidth
         maxWidth="sm"
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        slotProps={{ paper: { sx: { borderRadius: 3 } } }}
       >
         <DialogTitle sx={{ bgcolor: "#065f46", color: "white", py: 2, px: 3, fontSize: "1.05rem", fontWeight: 700 }}>
           {formulaire?.id ? `Modifier le patient :${formulaire.id}` : "Nouveau patient"}
@@ -759,7 +759,7 @@ export default function Patients() {
       <Dialog
         open={!!aSupprimer}
         onClose={() => setASupprimer(null)}
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        slotProps={{ paper: { sx: { borderRadius: 3 } } }}
       >
         <DialogTitle sx={{ color: "#dc2626", fontSize: "1.05rem", fontWeight: 700 }}>
           Supprimer ce dossier patient ?

@@ -461,3 +461,131 @@ enregistrer_intention(
         synthetiseur_reponse=_synth_ask_polymedique,
     )
 )
+
+# 10. Liste de toutes les pathologies (Maladies)
+def _gen_toutes_pathologies(entites: Dict[str, Any]) -> Tuple[str, str]:
+    sparql = """PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?id ?libelle (COUNT(DISTINCT ?p) AS ?nb_patients) WHERE {
+  ?x a/rdfs:subClassOf* :Pathologie .
+  OPTIONAL { ?x :libelle ?libelle }
+  OPTIONAL { ?p :souffreDe ?x }
+  BIND(STRAFTER(STR(?x), "#") AS ?id)
+}
+GROUP BY ?id ?libelle
+ORDER BY ?libelle ?id"""
+    return "SELECT", sparql
+
+
+def _synth_toutes_pathologies(lignes: List[Dict[str, Any]], entites: Dict[str, Any]) -> str:
+    if not lignes:
+        return "Aucune pathologie n'a été trouvée dans l'ontologie."
+    liste = [f"{l.get('libelle') or l.get('id')} ({l.get('nb_patients', 0)} patient(s))" for l in lignes]
+    return f"L'ontologie contient {len(lignes)} pathologies enregistrées : " + ", ".join(liste) + "."
+
+
+enregistrer_intention(
+    Intention(
+        id_intention="liste_toutes_pathologies",
+        domaine="Pathologies & Patients (Membre C)",
+        description="Lister toutes les pathologies et maladies enregistrées dans la base",
+        exemples=[
+            "Quelles sont les pathologies enregistrées ?",
+            "Donne-moi la liste des maladies",
+            "Quelles maladies existent dans l'ontologie ?",
+            "Afficher toutes les pathologies",
+            "Liste de toutes les maladies",
+            "Quelles sont les différentes pathologies ?",
+        ],
+        mots_cles=["pathologies", "maladies", "maladie", "pathologie", "liste des maladies"],
+        generateur_sparql=_gen_toutes_pathologies,
+        synthetiseur_reponse=_synth_toutes_pathologies,
+    )
+)
+
+
+# 11. Patients souffrant d'une pathologie spécifique
+def _gen_patients_par_pathologie(entites: Dict[str, Any]) -> Tuple[str, str]:
+    patho = entites.get("pathologie", "")
+    filtre = ""
+    if patho:
+        p_clean = re.sub(r'["\\]', '', patho)
+        filtre = f'FILTER(REGEX(?libelle, "{p_clean}", "i") || REGEX(STR(?patho), "{p_clean}", "i"))'
+
+    sparql = f"""PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?id ?nom ?prenom ?libelle WHERE {{
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nom ; :souffreDe ?patho .
+  OPTIONAL {{ ?p :prenom ?prenom }}
+  OPTIONAL {{ ?patho :libelle ?libelle }}
+  {filtre}
+  BIND(STRAFTER(STR(?p), "#") AS ?id)
+}}
+ORDER BY ?nom ?prenom"""
+    return "SELECT", sparql
+
+
+def _synth_patients_par_pathologie(lignes: List[Dict[str, Any]], entites: Dict[str, Any]) -> str:
+    patho = entites.get("pathologie", "cette pathologie")
+    if not lignes:
+        return f"Aucun patient ne souffre de {patho} d'après l'ontologie."
+    noms = [f"{l.get('prenom', '')} {l.get('nom', '')}".strip() for l in lignes]
+    lib = lignes[0].get("libelle") or patho
+    return f"Il y a {len(lignes)} patient(s) atteint(s) de {lib} : " + ", ".join(noms) + "."
+
+
+enregistrer_intention(
+    Intention(
+        id_intention="patients_par_pathologie",
+        domaine="Pathologies & Patients (Membre C)",
+        description="Trouver tous les patients souffrant d'une maladie donnée",
+        exemples=[
+            "Quels patients souffrent de diabète ?",
+            "Qui a du diabète ?",
+            "Quels patients ont une hypertension ?",
+            "Qui souffre d'hypertension artérielle ?",
+            "Quels patients ont une thrombose veineuse ?",
+            "Qui est atteint d'infection bactérienne ?",
+            "Quels patients souffrent d'insuffisance rénale ?",
+        ],
+        mots_cles=["souffrent de", "qui a", "atteint de", "malade de", "qui souffre"],
+        generateur_sparql=_gen_patients_par_pathologie,
+        synthetiseur_reponse=_synth_patients_par_pathologie,
+    )
+)
+
+
+# 12. Nombre total de pathologies
+def _gen_nombre_pathologies(entites: Dict[str, Any]) -> Tuple[str, str]:
+    sparql = """PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT (COUNT(DISTINCT ?x) AS ?total_pathologies) WHERE {
+  ?x a/rdfs:subClassOf* :Pathologie .
+}"""
+    return "SELECT", sparql
+
+
+def _synth_nombre_pathologies(lignes: List[Dict[str, Any]], entites: Dict[str, Any]) -> str:
+    nb = lignes[0].get("total_pathologies", 0) if lignes else 0
+    return f"L'ontologie compte un total de {nb} pathologies et maladies distinctes."
+
+
+enregistrer_intention(
+    Intention(
+        id_intention="nombre_pathologies",
+        domaine="Pathologies & Patients (Membre C)",
+        description="Compter le nombre total de pathologies enregistrées",
+        exemples=[
+            "Combien de pathologies existe-t-il ?",
+            "Quel est le nombre de maladies ?",
+            "Combien de maladies sont enregistrées ?",
+            "Total des pathologies",
+        ],
+        mots_cles=["combien de pathologies", "nombre de maladies", "total des pathologies"],
+        generateur_sparql=_gen_nombre_pathologies,
+        synthetiseur_reponse=_synth_nombre_pathologies,
+    )
+)

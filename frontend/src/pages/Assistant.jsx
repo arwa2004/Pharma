@@ -34,6 +34,15 @@ const QUESTIONS_RAPIDES = [
     ],
   },
   {
+    categorie: "Maladies & Pathologies (Domaine C)",
+    questions: [
+      "Quelles sont les pathologies enregistrées ?",
+      "Quels patients souffrent de diabète ?",
+      "Combien de pathologies existe-t-il ?",
+      "Qui a une hypertension ?",
+    ],
+  },
+  {
     categorie: "Classes définies (Règles HermiT)",
     questions: [
       "Quels patients sont polymédiqués ?",
