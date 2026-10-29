@@ -20,7 +20,6 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
-import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
 const VUES = {
   tous: "/patients",
@@ -38,7 +37,6 @@ function getInitials(prenom, nom) {
 
 export default function Patients() {
   const navigate = useNavigate();
-  const { modeSoutenance } = useSoutenance();
 
   const [vue, setVue] = useState("tous");
   const [recherche, setRecherche] = useState("");
@@ -199,7 +197,7 @@ export default function Patients() {
 
       {/* Cartes récapitulatives avec vocabulaire clair */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("tous")}
@@ -232,7 +230,7 @@ export default function Patients() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={4}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("polymedies")}
@@ -270,7 +268,7 @@ export default function Patients() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={4}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={0}
             onClick={() => setVue("pathologies")}
@@ -322,13 +320,13 @@ export default function Patients() {
       >
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
           {/* Boutons de sélection rapide */}
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }} useFlexGap>
             <Button
               variant={vue === "tous" ? "contained" : "outlined"}
               onClick={() => setVue("tous")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.85rem",
+                fontSize: "0.85rem", whiteSpace: "nowrap",
                 px: 2,
                 py: 0.6,
                 bgcolor: vue === "tous" ? "#065f46" : "transparent",
@@ -344,7 +342,7 @@ export default function Patients() {
               onClick={() => setVue("polymedies")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.85rem",
+                fontSize: "0.85rem", whiteSpace: "nowrap",
                 px: 2,
                 py: 0.6,
                 bgcolor: vue === "polymedies" ? "#d97706" : "transparent",
@@ -360,7 +358,7 @@ export default function Patients() {
               onClick={() => setVue("pathologies")}
               sx={{
                 borderRadius: 2,
-                fontSize: "0.85rem",
+                fontSize: "0.85rem", whiteSpace: "nowrap",
                 px: 2,
                 py: 0.6,
                 bgcolor: vue === "pathologies" ? "#2563eb" : "transparent",
@@ -511,7 +509,7 @@ export default function Patients() {
                           sx={{
                             width: 38,
                             height: 38,
-                            fontSize: "0.85rem",
+                            fontSize: "0.85rem", whiteSpace: "nowrap",
                             fontWeight: 700,
                             bgcolor: poly ? "#fef3c7" : patho ? "#dbeafe" : "#f1f5f9",
                             color: poly ? "#b45309" : patho ? "#1d4ed8" : "#475569",
@@ -664,7 +662,7 @@ export default function Patients() {
         </Table>
       </TableContainer>
 
-      {/* Requête SPARQL (affichée selon le mode soutenance) */}
+      {/* Requête SPARQL */}
       <SparqlBox sparql={sparql} />
 
       {/* Modal Création / Modification avec champ Médecin traitant */}

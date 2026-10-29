@@ -3,7 +3,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import App from "./App.jsx";
-import { SoutenanceProvider } from "./context/SoutenanceContext.jsx";
+import "./index.css";
+
+
+
 
 // Thème médical clair, moderne et lisible
 const theme = createTheme({
@@ -64,11 +67,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SoutenanceProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </SoutenanceProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </ThemeProvider>
   </React.StrictMode>
 );

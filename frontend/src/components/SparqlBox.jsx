@@ -5,17 +5,12 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
-import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
-export default function SparqlBox({ sparql, defaultOpen = false, forceShow = false }) {
-  const { modeSoutenance } = useSoutenance();
+export default function SparqlBox({ sparql, defaultOpen = false }) {
   const [ouvert, setOuvert] = useState(defaultOpen);
   const [copie, setCopie] = useState(false);
 
-  // Si le mode soutenance est inactif et qu'on ne force pas l'affichage,
-  // on masque le bloc pour ne pas encombrer l'écran.
   if (!sparql) return null;
-  if (!modeSoutenance && !forceShow) return null;
 
   const copier = (e) => {
     e.stopPropagation();
@@ -39,7 +34,7 @@ export default function SparqlBox({ sparql, defaultOpen = false, forceShow = fal
         onClick={() => setOuvert(!ouvert)}
         sx={{
           px: 2.5,
-          py: 1.5,
+          py: 1.25,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -52,10 +47,14 @@ export default function SparqlBox({ sparql, defaultOpen = false, forceShow = fal
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
           <CodeIcon sx={{ color: "#065f46", fontSize: 22 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.9rem", color: "#1e293b" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.88rem", color: "#1e293b" }}>
             Requête SPARQL exécutée (Apache Jena Fuseki)
           </Typography>
-          <Chip label="SPARQL 1.1" size="small" sx={{ height: 22, fontSize: "0.72rem", bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 700 }} />
+          <Chip
+            label="SPARQL 1.1"
+            size="small"
+            sx={{ height: 22, fontSize: "0.72rem", bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 700 }}
+          />
         </Stack>
 
         <Stack direction="row" spacing={1} alignItems="center">

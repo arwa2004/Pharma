@@ -23,7 +23,6 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import SchoolIcon from "@mui/icons-material/School";
 import { api } from "../api.js";
 import SparqlBox from "../components/SparqlBox.jsx";
-import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
 function getInitials(prenom, nom) {
   const p = (prenom || "").trim()[0] || "";
@@ -34,7 +33,6 @@ function getInitials(prenom, nom) {
 export default function PatientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { modeSoutenance } = useSoutenance();
 
   const [fiche, setFiche] = useState(null);
   const [sparql, setSparql] = useState("");
@@ -359,7 +357,7 @@ export default function PatientDetail() {
           {/* Grille principale 2 Colonnes */}
           <Grid container spacing={3}>
             {/* Colonne GAUCHE : Traitement et Maladies */}
-            <Grid item xs={12} md={7}>
+            <Grid size={{ xs: 12, md: 7 }}>
               <Stack spacing={3}>
                 {/* 1. Traitements médicamenteux */}
                 <Paper
@@ -576,7 +574,7 @@ export default function PatientDetail() {
             </Grid>
 
             {/* Colonne DROITE : Médecin, Alertes, et Démonstrateur soutenance */}
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <Stack spacing={3}>
                 {/* 3. Médecin traitant */}
                 <Paper
@@ -595,13 +593,6 @@ export default function PatientDetail() {
                         Médecin traitant
                       </Typography>
                     </Stack>
-                    {modeSoutenance && (
-                      <Chip
-                        label="max 1 Medecin"
-                        size="small"
-                        sx={{ fontSize: "0.72rem", fontFamily: "monospace", bgcolor: "#f1f5f9", color: "#475569" }}
-                      />
-                    )}
                   </Stack>
 
                   {fiche.medecin ? (
@@ -714,69 +705,67 @@ export default function PatientDetail() {
                   )}
                 </Paper>
 
-                {/* 5. Démonstrateur SPARQL (affiché UNIQUEMENT en Mode Soutenance) */}
-                {modeSoutenance && (
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      border: "2px solid #cbd5e1",
-                      bgcolor: "#f8fafc",
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                      <SchoolIcon sx={{ color: "#065f46", fontSize: 22 }} />
-                      <Typography variant="h6" color="#0f172a">
-                        Démonstrateur de requêtes SPARQL
-                      </Typography>
-                    </Stack>
-                    <Typography variant="body2" color="#64748b" sx={{ mb: 2 }}>
-                      Requêtes avancées pour la validation avec l'examinateur.
+                {/* 5. Démonstrateur de requêtes SPARQL */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    border: "1px solid #cbd5e1",
+                    bgcolor: "#f8fafc",
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <CodeIcon sx={{ color: "#065f46", fontSize: 22 }} />
+                    <Typography variant="h6" color="#0f172a">
+                      Démonstrateur SPARQL (ASK & DESCRIBE)
                     </Typography>
-                    <Stack spacing={1.25}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<HelpOutlineIcon />}
-                        onClick={handleTesterAsk}
-                        sx={{
-                          fontSize: "0.84rem",
-                          bgcolor: "#ffffff",
-                          color: "#065f46",
-                          borderColor: "#cbd5e1",
-                          justifyContent: "flex-start",
-                          py: 1,
-                          borderRadius: 2,
-                          "&:hover": { borderColor: "#065f46", bgcolor: "#f0fdf4" },
-                        }}
-                      >
-                        Tester SPARQL ASK (Polymédication)
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CodeIcon />}
-                        onClick={handleDescribeRdf}
-                        sx={{
-                          fontSize: "0.84rem",
-                          bgcolor: "#ffffff",
-                          color: "#2563eb",
-                          borderColor: "#cbd5e1",
-                          justifyContent: "flex-start",
-                          py: 1,
-                          borderRadius: 2,
-                          "&:hover": { borderColor: "#2563eb", bgcolor: "#eff6ff" },
-                        }}
-                      >
-                        Exécuter SPARQL DESCRIBE (Graphe RDF)
-                      </Button>
-                    </Stack>
-                  </Paper>
-                )}
+                  </Stack>
+                  <Typography variant="body2" color="#64748b" sx={{ mb: 2 }}>
+                    Outils de validation sémantique et requêtes avancées.
+                  </Typography>
+                  <Stack spacing={1.25}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<HelpOutlineIcon />}
+                      onClick={handleTesterAsk}
+                      sx={{
+                        fontSize: "0.84rem",
+                        bgcolor: "#ffffff",
+                        color: "#065f46",
+                        borderColor: "#cbd5e1",
+                        justifyContent: "flex-start",
+                        py: 1,
+                        borderRadius: 2,
+                        "&:hover": { borderColor: "#065f46", bgcolor: "#f0fdf4" },
+                      }}
+                    >
+                      Tester SPARQL ASK (Polymédication)
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CodeIcon />}
+                      onClick={handleDescribeRdf}
+                      sx={{
+                        fontSize: "0.84rem",
+                        bgcolor: "#ffffff",
+                        color: "#2563eb",
+                        borderColor: "#cbd5e1",
+                        justifyContent: "flex-start",
+                        py: 1,
+                        borderRadius: 2,
+                        "&:hover": { borderColor: "#2563eb", bgcolor: "#eff6ff" },
+                      }}
+                    >
+                      Exécuter SPARQL DESCRIBE (Graphe RDF)
+                    </Button>
+                  </Stack>
+                </Paper>
               </Stack>
             </Grid>
           </Grid>
 
-          {/* SPARQL Box (affichée selon le mode soutenance) */}
+          {/* Requête SPARQL */}
           <SparqlBox sparql={sparql} />
         </Stack>
       )}

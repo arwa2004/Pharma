@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   AppBar, Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, Typography, Stack, Chip, FormControlLabel, Switch, Tooltip
+  Toolbar, Typography, Stack, Chip
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import MedicationIcon from "@mui/icons-material/Medication";
@@ -10,8 +10,6 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
-import SchoolIcon from "@mui/icons-material/School";
-import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
 const LARGEUR_MENU = 225;
 
@@ -26,7 +24,6 @@ const MENU = [
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const { modeSoutenance, setModeSoutenance } = useSoutenance();
 
   return (
     <Box sx={{ display: "flex", bgcolor: "#f8fafc", minHeight: "100vh" }}>
@@ -52,49 +49,9 @@ export default function Layout() {
             />
           </Stack>
 
-          {/* Interrupteur Mode Soutenance */}
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Tooltip
-              title="Active l'affichage des requêtes SPARQL brutes, des axiomes OWL et du démonstrateur pour l'évaluation"
-              arrow
-            >
-              <Box
-                sx={{
-                  bgcolor: modeSoutenance ? "rgba(255, 237, 213, 0.2)" : "rgba(255,255,255,0.08)",
-                  px: 1.5,
-                  py: 0.4,
-                  borderRadius: 2,
-                  border: modeSoutenance ? "1px solid #fde68a" : "1px solid transparent",
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={modeSoutenance}
-                      onChange={(e) => setModeSoutenance(e.target.checked)}
-                      color="warning"
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Stack direction="row" spacing={0.6} alignItems="center">
-                      <SchoolIcon sx={{ fontSize: 18, color: modeSoutenance ? "#fef08a" : "#cbd5e1" }} />
-                      <Typography
-                        sx={{
-                          fontSize: "0.84rem",
-                          fontWeight: 600,
-                          color: modeSoutenance ? "#fef08a" : "#e2e8f0",
-                        }}
-                      >
-                        Mode soutenance {modeSoutenance ? "(actif)" : ""}
-                      </Typography>
-                    </Stack>
-                  }
-                  sx={{ m: 0 }}
-                />
-              </Box>
-            </Tooltip>
-          </Stack>
+          <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", fontSize: "0.85rem" }}>
+            Ontologie OWL · SPARQL 1.1 · spaCy NLP
+          </Typography>
         </Toolbar>
       </AppBar>
 
