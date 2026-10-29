@@ -1,0 +1,319 @@
+@prefix :     <http://www.esprit.tn/ontologies/pharma-sante#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+
+#################################################################
+#                   HIÉRARCHIE DES CLASSES DU DOMAINE A
+#################################################################
+
+:Medicament a owl:Class ; rdfs:label "Médicament"@fr .
+:MedicamentSurOrdonnance a owl:Class ; rdfs:subClassOf :Medicament ; rdfs:label "Médicament sur ordonnance"@fr .
+:MedicamentSansOrdonnance a owl:Class ; rdfs:subClassOf :Medicament ; rdfs:label "Médicament sans ordonnance"@fr .
+:Molecule a owl:Class ; rdfs:label "Molécule chimique"@fr .
+:PrincipeActif a owl:Class ; rdfs:subClassOf :Molecule ; rdfs:label "Principe actif"@fr .
+:Excipient a owl:Class ; rdfs:label "Excipient"@fr .
+:ClasseTherapeutique a owl:Class ; rdfs:label "Classe thérapeutique"@fr .
+:FormePharmaceutique a owl:Class ; rdfs:label "Forme pharmaceutique (galénique)"@fr .
+:VoieAdministration a owl:Class ; rdfs:label "Voie d'administration"@fr .
+:Laboratoire a owl:Class ; rdfs:label "Laboratoire pharmaceutique fabricant"@fr .
+
+# Classe définie déduite par HermiT / règle ontologique :
+:MedicamentAContreIndicationAbsolue a owl:Class ;
+    rdfs:subClassOf :Medicament ;
+    rdfs:label "Médicament à contre-indication absolue"@fr ;
+    rdfs:comment "Médicament possédant au moins une contre-indication de type absolu."@fr .
+
+
+#################################################################
+#                   LABORATOIRES FABRICANTS
+#################################################################
+
+:Lab_Sanofi a :Laboratoire ;
+    :nom "Sanofi" ;
+    :pays "France" ;
+    :adresse "Paris, France" .
+
+:Lab_Pfizer a :Laboratoire ;
+    :nom "Pfizer" ;
+    :pays "États-Unis" ;
+    :adresse "New York, USA" .
+
+:Lab_Saiph a :Laboratoire ;
+    :nom "Laboratoires Saiph" ;
+    :pays "Tunisie" ;
+    :adresse "Zaghouan, Tunisie" .
+
+:Lab_Unimed a :Laboratoire ;
+    :nom "Unimed Laboratoires" ;
+    :pays "Tunisie" ;
+    :adresse "Sousse, Tunisie" .
+
+:Lab_Bayer a :Laboratoire ;
+    :nom "Bayer Pharma" ;
+    :pays "Allemagne" ;
+    :adresse "Leverkusen, Allemagne" .
+
+:Lab_GSK a :Laboratoire ;
+    :nom "GlaxoSmithKline (GSK)" ;
+    :pays "Royaume-Uni" ;
+    :adresse "Brentford, Royaume-Uni" .
+
+:Lab_Opalia a :Laboratoire ;
+    :nom "Opalia Recordati" ;
+    :pays "Tunisie" ;
+    :adresse "Kalaat El Andalous, Tunisie" .
+
+
+#################################################################
+#                   FORMES PHARMACEUTIQUES
+#################################################################
+
+:Forme_Comprime a :FormePharmaceutique ; :libelle "Comprimé pelliculé" .
+:Forme_Gelule a :FormePharmaceutique ; :libelle "Gélule" .
+:Forme_Sirop a :FormePharmaceutique ; :libelle "Sirop buvable" .
+:Forme_SolutionInjectable a :FormePharmaceutique ; :libelle "Solution injectable" .
+:Forme_Pommade a :FormePharmaceutique ; :libelle "Pommade cutanée" .
+:Forme_Sachet a :FormePharmaceutique ; :libelle "Poudre pour suspension buvable" .
+
+
+#################################################################
+#                   VOIES D'ADMINISTRATION
+#################################################################
+
+:Voie_Orale a :VoieAdministration ; :libelle "Voie orale" .
+:Voie_Intraveineuse a :VoieAdministration ; :libelle "Voie intraveineuse" .
+:Voie_Cutanee a :VoieAdministration ; :libelle "Voie cutanée" .
+:Voie_Inhalation a :VoieAdministration ; :libelle "Voie inhalée" .
+
+
+#################################################################
+#                   CLASSES THÉRAPEUTIQUES
+#################################################################
+
+:Classe_Antibiotique a :ClasseTherapeutique ;
+    :libelle "Antibiotiques" .
+
+:Classe_Penicilline a :ClasseTherapeutique ;
+    :libelle "Pénicillines" ;
+    :sousClasseTherapeutiqueDe :Classe_Antibiotique .
+
+:Classe_AntiInflammatoire a :ClasseTherapeutique ;
+    :libelle "Anti-inflammatoires" .
+
+:Classe_AINS a :ClasseTherapeutique ;
+    :libelle "Anti-inflammatoires non stéroïdiens (AINS)" ;
+    :sousClasseTherapeutiqueDe :Classe_AntiInflammatoire .
+
+:Classe_Antidiabetique a :ClasseTherapeutique ;
+    :libelle "Antidiabétiques" .
+
+:Classe_Biguanide a :ClasseTherapeutique ;
+    :libelle "Biguanides" ;
+    :sousClasseTherapeutiqueDe :Classe_Antidiabetique .
+
+:Classe_Anticoagulant a :ClasseTherapeutique ;
+    :libelle "Anticoagulants" .
+
+:Classe_AntiVitamineK a :ClasseTherapeutique ;
+    :libelle "Anti-vitamines K" ;
+    :sousClasseTherapeutiqueDe :Classe_Anticoagulant .
+
+:Classe_Antalgique a :ClasseTherapeutique ;
+    :libelle "Antalgiques et antipyrétiques" .
+
+:Classe_InhibiteurPompeProtons a :ClasseTherapeutique ;
+    :libelle "Inhibiteurs de la pompe à protons (IPP)" .
+
+
+#################################################################
+#                   PRINCIPES ACTIFS & MOLÉCULES
+#################################################################
+
+:Mol_Amoxicilline a :PrincipeActif, :Molecule ;
+    :nom "Amoxicilline trihydrate" ;
+    :formuleChimique "C16H19N3O5S" .
+
+:Mol_Ibuprofene a :PrincipeActif, :Molecule ;
+    :nom "Ibuprofène" ;
+    :formuleChimique "C13H18O2" .
+
+:Mol_Metformine a :PrincipeActif, :Molecule ;
+    :nom "Metformine chlorhydrate" ;
+    :formuleChimique "C4H11N5" .
+
+:Mol_Warfarine a :PrincipeActif, :Molecule ;
+    :nom "Warfarine sodique" ;
+    :formuleChimique "C19H16O4" .
+
+:Mol_Aspirine a :PrincipeActif, :Molecule ;
+    :nom "Acide acétylsalicylique" ;
+    :formuleChimique "C9H8O4" .
+
+:Mol_Paracetamol a :PrincipeActif, :Molecule ;
+    :nom "Paracétamol" ;
+    :formuleChimique "C8H9NO2" .
+
+:Mol_Omeprazole a :PrincipeActif, :Molecule ;
+    :nom "Oméprazole" ;
+    :formuleChimique "C17H19N3O3S" .
+
+:Mol_Ciprofloxacine a :PrincipeActif, :Molecule ;
+    :nom "Ciprofloxacine" ;
+    :formuleChimique "C17H18FN3O3" .
+
+
+#################################################################
+#                   EXCIPIENTS
+#################################################################
+
+:Exc_Lactose a :Excipient ;
+    :nom "Lactose monohydraté" ;
+    :effetNotoire "Intolérance au lactose" .
+
+:Exc_AmidonMais a :Excipient ;
+    :nom "Amidon de maïs" .
+
+:Exc_StearateMagnesium a :Excipient ;
+    :nom "Stéarate de magnésium" .
+
+:Exc_Silice a :Excipient ;
+    :nom "Silice colloïdale anhydre" .
+
+:Exc_Povidone a :Excipient ;
+    :nom "Povidone K30" .
+
+:Exc_Saccharose a :Excipient ;
+    :nom "Saccharose" ;
+    :effetNotoire "Intolérance au fructose" .
+
+
+#################################################################
+#                   CONTRE-INDICATIONS ABSOLUES
+#################################################################
+
+:CI_Grossesse3emeTrimestre a :ContreIndicationAbsolue, :ContreIndication ;
+    :libelle "Grossesse (à partir du 6ème mois)" .
+
+:CI_UlcereEvolutif a :ContreIndicationAbsolue, :ContreIndication ;
+    :libelle "Ulcère gastroduodénal en évolution" .
+
+:CI_AllergiePenicilline a :ContreIndicationAbsolue, :ContreIndication ;
+    :libelle "Allergie avérée aux pénicillines" .
+
+:CI_InsuffisanceHepatiqueSevere a :ContreIndicationAbsolue, :ContreIndication ;
+    :libelle "Insuffisance hépatocellulaire sévère" .
+
+
+#################################################################
+#                   MÉDICAMENTS COMPLETS
+#################################################################
+
+# 1. Med_Amoxicilline
+:Med_Amoxicilline a :MedicamentSurOrdonnance, :MedicamentAContreIndicationAbsolue ;
+    :nomCommercial "Amoxicilline Clamoxyl" ;
+    :codeAMM "AMM-3400936-AMOX" ;
+    :dosageMg 500.0 ;
+    :contientPrincipeActif :Mol_Amoxicilline ;
+    :contientMolecule :Mol_Amoxicilline ;
+    :contientExcipient :Exc_StearateMagnesium, :Exc_Silice ;
+    :aForme :Forme_Gelule ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_Penicilline ;
+    :estFabriquePar :Lab_GSK ;
+    :aContreIndication :CI_AllergiePenicilline .
+
+# 2. Med_Ibuprofene
+:Med_Ibuprofene a :MedicamentSansOrdonnance, :MedicamentAContreIndicationAbsolue ;
+    :nomCommercial "Ibuprofène Advil" ;
+    :codeAMM "AMM-3400937-IBUP" ;
+    :dosageMg 400.0 ;
+    :contientPrincipeActif :Mol_Ibuprofene ;
+    :contientMolecule :Mol_Ibuprofene ;
+    :contientExcipient :Exc_AmidonMais, :Exc_StearateMagnesium ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_AINS ;
+    :estFabriquePar :Lab_Pfizer ;
+    :aContreIndication :CI_Grossesse3emeTrimestre, :CI_UlcereEvolutif .
+
+# 3. Med_Metformine
+:Med_Metformine a :MedicamentSurOrdonnance ;
+    :nomCommercial "Metformine Glucophage" ;
+    :codeAMM "AMM-3400938-METF" ;
+    :dosageMg 850.0 ;
+    :contientPrincipeActif :Mol_Metformine ;
+    :contientMolecule :Mol_Metformine ;
+    :contientExcipient :Exc_Povidone, :Exc_StearateMagnesium ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_Biguanide ;
+    :estFabriquePar :Lab_Sanofi .
+
+# 4. Med_Warfarine
+:Med_Warfarine a :MedicamentSurOrdonnance ;
+    :nomCommercial "Warfarine Coumadine" ;
+    :codeAMM "AMM-3400939-WARF" ;
+    :dosageMg 5.0 ;
+    :contientPrincipeActif :Mol_Warfarine ;
+    :contientMolecule :Mol_Warfarine ;
+    :contientExcipient :Exc_Lactose, :Exc_AmidonMais ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_AntiVitamineK ;
+    :estFabriquePar :Lab_Saiph .
+
+# 5. Med_Aspirine
+:Med_Aspirine a :MedicamentSansOrdonnance, :MedicamentAContreIndicationAbsolue ;
+    :nomCommercial "Aspirine Protect" ;
+    :codeAMM "AMM-3400940-ASPI" ;
+    :dosageMg 100.0 ;
+    :contientPrincipeActif :Mol_Aspirine ;
+    :contientMolecule :Mol_Aspirine ;
+    :contientExcipient :Exc_AmidonMais, :Exc_Silice ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_AINS ;
+    :estFabriquePar :Lab_Bayer ;
+    :aContreIndication :CI_UlcereEvolutif .
+
+# 6. Med_Paracetamol
+:Med_Paracetamol a :MedicamentSansOrdonnance, :MedicamentAContreIndicationAbsolue ;
+    :nomCommercial "Paracétamol Doliprane" ;
+    :codeAMM "AMM-3400941-PARA" ;
+    :dosageMg 1000.0 ;
+    :contientPrincipeActif :Mol_Paracetamol ;
+    :contientMolecule :Mol_Paracetamol ;
+    :contientExcipient :Exc_Povidone, :Exc_StearateMagnesium ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_Antalgique ;
+    :estFabriquePar :Lab_Sanofi ;
+    :aContreIndication :CI_InsuffisanceHepatiqueSevere .
+
+# 7. Med_Omeprazole
+:Med_Omeprazole a :MedicamentSurOrdonnance ;
+    :nomCommercial "Oméprazole Mopral" ;
+    :codeAMM "AMM-3400942-OMEP" ;
+    :dosageMg 20.0 ;
+    :contientPrincipeActif :Mol_Omeprazole ;
+    :contientMolecule :Mol_Omeprazole ;
+    :contientExcipient :Exc_Lactose, :Exc_Silice ;
+    :aForme :Forme_Gelule ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_InhibiteurPompeProtons ;
+    :estFabriquePar :Lab_Unimed .
+
+# 8. Med_Ciprofloxacine
+:Med_Ciprofloxacine a :MedicamentSurOrdonnance ;
+    :nomCommercial "Ciprofloxacine Ciflox" ;
+    :codeAMM "AMM-3400943-CIPR" ;
+    :dosageMg 500.0 ;
+    :contientPrincipeActif :Mol_Ciprofloxacine ;
+    :contientMolecule :Mol_Ciprofloxacine ;
+    :contientExcipient :Exc_AmidonMais, :Exc_StearateMagnesium ;
+    :aForme :Forme_Comprime ;
+    :administreParVoie :Voie_Orale ;
+    :appartientAClasse :Classe_Antibiotique ;
+    :estFabriquePar :Lab_Bayer .

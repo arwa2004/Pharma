@@ -24,7 +24,6 @@ def get_nlp() -> Language:
         try:
             _nlp = spacy.load("fr_core_news_md")
         except Exception:
-            # Fallback si modèle sm ou standard
             _nlp = spacy.blank("fr")
     return _nlp
 
@@ -66,12 +65,36 @@ def enregistrer_intention(intention: Intention):
 
 # ---------- Extracteur d'entités avec spaCy ----------
 
+MOLECULES_CONNUES = [
+    "paracetamol", "amoxicilline", "ibuprofene", "metformine",
+    "warfarine", "aspirine", "omeprazole", "ciprofloxacine",
+    "acide acetylsalicylique", "penicilline"
+]
+
+LABORATOIRES_CONNUS = [
+    "sanofi", "pfizer", "saiph", "unimed", "bayer", "gsk",
+    "glaxosmithkline", "opalia", "recordati"
+]
+
+MEDICAMENTS_CONNUS = [
+    "amoxicilline clamoxyl", "clamoxyl", "ibuprofene advil", "advil",
+    "metformine glucophage", "glucophage", "warfarine coumadine", "coumadine",
+    "aspirine protect", "aspirine", "paracetamol doliprane", "doliprane",
+    "omeprazole mopral", "mopral", "ciprofloxacine ciflox", "ciflox"
+]
+
+FORMES_CONNUES = [
+    "comprime", "gelule", "sirop", "injectable", "solution injectable",
+    "pommade", "sachet", "suspension"
+]
+
+
 def extraire_entites(doc, question: str) -> Dict[str, Any]:
-    """Extrait le nom de personne, les valeurs numériques (âge), etc."""
+    """Extrait le nom de personne, les valeurs numériques (âge, dosage), molécules, médicaments, labos, etc."""
     entites: Dict[str, Any] = {}
+    q_norm = normaliser_texte(question)
 
     # 1. Extraction d'âge ou nombre
-    # Recherche regex d'âge : ex "60 ans", "plus de 50", ">= 40"
     m_age = re.search(r"(?:plus de|de plus de|>|>=|superieur a|age de|age|ans)\s*(\d{1,3})", question, re.IGNORECASE)
     if not m_age:
         m_age = re.search(r"(\d{1,3})\s*(?:ans|an)", question, re.IGNORECASE)
@@ -81,23 +104,62 @@ def extraire_entites(doc, question: str) -> Dict[str, Any]:
         except ValueError:
             pass
 
-    # 2. Entités nommées spaCy (Personnes)
+    # Extraction de seuil de dosage
+    m_dose = re.search(r"(?:dosage|dose|superieur a|>|>=|plus de|dose a)\s*(\d+(?:\.\d+)?)\s*(?:mg)?", q_norm)
+    if not m_dose:
+        m_dose = re.search(r"(\d+(?:\.\d+)?)\s*(?:mg|milligramme)", q_norm)
+    if m_dose:
+        try:
+            entites["dosage"] = float(m_dose.group(1))
+        except ValueError:
+            pass
+
+    # 2. Détection Molécules
+    for mol in sorted(MOLECULES_CONNUES, key=len, reverse=True):
+        if mol in q_norm:
+            entites["molecule"] = mol
+            break
+
+    # 3. Détection Laboratoires
+    for lab in sorted(LABORATOIRES_CONNUS, key=len, reverse=True):
+        if lab in q_norm:
+            entites["laboratoire"] = lab
+            break
+
+    # 4. Détection Médicaments
+    for med in sorted(MEDICAMENTS_CONNUS, key=len, reverse=True):
+        if med in q_norm:
+            entites["medicament"] = med
+            break
+
+    # 5. Détection Formes Galéniques
+    for frm in sorted(FORMES_CONNUES, key=len, reverse=True):
+        if frm in q_norm:
+            entites["forme"] = frm
+            break
+
+    # 6. Entités nommées spaCy (Personnes)
     noms_personnes = []
+    mots_bannis = {
+        "patient", "patients", "medicament", "medicaments", "docteur", "medecin",
+        "pathologie", "maladie", "doliprane", "aspirine", "advil", "clamoxyl",
+        "glucophage", "coumadine", "mopral", "sanofi", "pfizer", "bayer", "gsk",
+        "saiph", "unimed", "forme", "voie", "ordonnance"
+    }
+
     for ent in doc.ents:
         if ent.label_ in ("PER", "MISC", "LOC"):
-            # Nettoyer l'entité
             texte_ent = ent.text.strip()
-            # Éviter de capturer des mots-clés du domaine
-            mots_bannis = {"patient", "patients", "medicament", "medicaments", "docteur", "medecin", "pathologie", "maladie"}
-            if texte_ent.lower() not in mots_bannis:
+            if normaliser_texte(texte_ent) not in mots_bannis:
                 noms_personnes.append(texte_ent)
 
-    # 3. Fallback d'extraction de nom si spaCy n'a pas détecté l'entité
-    # Recherche de motifs "de [Nom]", "pour [Nom]", "chez [Nom]"
+    # Fallback pour le nom du patient (ex: "de Sami", "pour Leila")
     if not noms_personnes:
-        m_nom = re.search(r"(?:de|chez|pour|concerne|patient)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)", question)
+        m_nom = re.search(r"(?:de|chez|pour|patient)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)", question)
         if m_nom:
-            noms_personnes.append(m_nom.group(1))
+            candidat_nom = m_nom.group(1)
+            if normaliser_texte(candidat_nom) not in mots_bannis:
+                noms_personnes.append(candidat_nom)
 
     if noms_personnes:
         entites["nom"] = noms_personnes[0]
@@ -131,7 +193,6 @@ def detecter_intention(question: str) -> Tuple[Optional[Intention], float, Dict[
         # Score sémantique comparé à chaque phrase d'exemple de l'intention
         for exemple in intention.exemples:
             doc_ex = nlp(exemple)
-            # Similarité vectorielle spaCy (si disponible)
             sim_vectorielle = 0.0
             if doc_q.has_vector and doc_ex.has_vector and doc_q.vector_norm and doc_ex.vector_norm:
                 sim_vectorielle = float(doc_q.similarity(doc_ex))
@@ -179,18 +240,18 @@ def executer_nlp(question: str) -> Dict[str, Any]:
             "confiance": confiance,
             "erreur": (
                 "Je n'ai pas pu identifier l'intention de votre question avec une certitude suffisante. "
-                "Essayez par exemple : 'Quels patients sont polymédiqués ?', 'De quoi souffre Sami ?', "
-                "ou 'Quels médicaments prend Sami ?'."
+                "Essayez par exemple : 'Quels médicaments contiennent du paracétamol ?', 'Qui fabrique la Metformine ?', "
+                "ou 'Quels médicaments ont une contre-indication absolue ?'."
             ),
             "suggestions": [
+                "Quels médicaments contiennent du paracétamol ?",
+                "Qui fabrique la Metformine ?",
+                "Quelle est la forme de l'Aspirine ?",
+                "Quels médicaments ont une contre-indication absolue ?",
+                "Quels médicaments sont sur ordonnance ?",
                 "Quels patients sont polymédiqués ?",
-                "Quels patients ont des pathologies multiples ?",
                 "De quoi souffre Sami ?",
                 "Quels médicaments prend Sami ?",
-                "Qui est le médecin de Sami ?",
-                "Y a-t-il des patients avec des interactions médicamenteuses ?",
-                "Quels patients ont plus de 60 ans ?",
-                "Donne-moi la liste de tous les patients",
             ],
         }
 

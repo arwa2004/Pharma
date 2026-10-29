@@ -21,6 +21,19 @@ import SparqlBox from "../components/SparqlBox.jsx";
 
 const QUESTIONS_RAPIDES = [
   {
+    categorie: "Médicaments & Composition (Membre A)",
+    questions: [
+      "Quels médicaments contiennent du paracétamol ?",
+      "Qui fabrique la Metformine ?",
+      "Quelle est la forme de l'Aspirine ?",
+      "Quels médicaments ont une contre-indication absolue ?",
+      "Quels médicaments nécessitent une ordonnance ?",
+      "Quels médicaments sont fabriqués par Sanofi ?",
+      "Quels médicaments ont un dosage supérieur à 500 mg ?",
+      "Quelle est la composition de l'Amoxicilline ?",
+    ],
+  },
+  {
     categorie: "Classes définies (Règles HermiT)",
     questions: [
       "Quels patients sont polymédiqués ?",
