@@ -1,12 +1,4 @@
-"""Point d'entrée de l'API.
-
-Lancer :  uvicorn main:app --reload
-Tester :  http://127.0.0.1:8000/docs
-
-Tous les fichiers du dossier routes/ qui contiennent une variable `router`
-sont ajoutés automatiquement : chaque membre ajoute son fichier sans toucher
-à celui des autres.
-"""
+"""Point d'entrée de l'API."""
 import importlib
 import pkgutil
 
@@ -16,6 +8,11 @@ from fastapi.responses import JSONResponse
 
 import fuseki_client
 import routes
+
+# 👇 ADD THESE IMPORTS HERE TO REGISTER ALL INTENTIONS 👇
+import nlp_medicaments
+import nlp_patients
+# 👆 ------------------------------------------------- 👆
 
 app = FastAPI(title="API Pharma-Santé", version="1.0")
 
