@@ -1,0 +1,188 @@
+@prefix :     <http://www.esprit.tn/ontologies/pharma-sante#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+#                   MÉDECINS RÉFÉRENTS
+#################################################################
+
+:Dr_BenAmor a :Medecin ;
+    :nom "Ben Amor" ;
+    :prenom "Slim" ;
+    :numeroOrdre "MED-TUN-1042" .
+
+:Dr_Karray a :Medecin ;
+    :nom "Karray" ;
+    :prenom "Nadia" ;
+    :numeroOrdre "MED-TUN-2089" .
+
+:Dr_Mansour a :Medecin ;
+    :nom "Mansour" ;
+    :prenom "Tarek" ;
+    :numeroOrdre "MED-TUN-3150" .
+
+
+#################################################################
+#                   PATHOLOGIES
+#################################################################
+
+:DiabeteType2 a :Pathologie ; :libelle "Diabète de type 2" .
+:Douleur a :Pathologie ; :libelle "Douleurs aiguës ou chroniques" .
+:Fievre a :Pathologie ; :libelle "Syndrome fébrile" .
+:InfectionBacterienne a :Pathologie ; :libelle "Infection bactérienne" .
+:InsuffisanceHepatique a :Pathologie ; :libelle "Insuffisance hépatique" .
+:InsuffisanceRenale a :Pathologie ; :libelle "Insuffisance rénale chronique" .
+:ThromboseVeineuse a :Pathologie ; :libelle "Thrombose veineuse profonde" .
+:UlcereGastrique a :Pathologie ; :libelle "Ulcère gastrique" .
+:HypertensionArterielle a :Pathologie ; :libelle "Hypertension artérielle" .
+
+
+#################################################################
+#                   MÉDICAMENTS
+#################################################################
+
+:Med_Amoxicilline a :MedicamentSurOrdonnance ;
+    :nomCommercial "Amoxicilline Clamoxyl" ;
+    :codeAMM "AMM-3400936-AMOX" ;
+    :dosageMg 500.0 .
+
+:Med_Ibuprofene a :MedicamentSansOrdonnance ;
+    :nomCommercial "Ibuprofène Advil" ;
+    :codeAMM "AMM-3400937-IBUP" ;
+    :dosageMg 400.0 .
+
+:Med_Metformine a :MedicamentSurOrdonnance ;
+    :nomCommercial "Metformine Glucophage" ;
+    :codeAMM "AMM-3400938-METF" ;
+    :dosageMg 850.0 .
+
+:Med_Warfarine a :MedicamentSurOrdonnance ;
+    :nomCommercial "Warfarine Coumadine" ;
+    :codeAMM "AMM-3400939-WARF" ;
+    :dosageMg 5.0 .
+
+:Med_Aspirine a :MedicamentSansOrdonnance ;
+    :nomCommercial "Aspirine Protect" ;
+    :codeAMM "AMM-3400940-ASPI" ;
+    :dosageMg 100.0 .
+
+:Med_Paracetamol a :MedicamentSansOrdonnance ;
+    :nomCommercial "Paracétamol Doliprane" ;
+    :codeAMM "AMM-3400941-PARA" ;
+    :dosageMg 1000.0 .
+
+
+#################################################################
+#        INTERACTION MÉDICAMENTEUSE (VALEUR AJOUTÉE)
+#################################################################
+
+:Inter_Warfarine_Aspirine a :Interaction ;
+    :libelle "Interaction majeure : Majoration sévère du risque hémorragique (anti-vitamine K + antiagrégant)" .
+
+:Med_Warfarine :participeInteraction :Inter_Warfarine_Aspirine .
+:Med_Aspirine  :participeInteraction :Inter_Warfarine_Aspirine .
+
+
+#################################################################
+#          INDIVIDUS DU DOMAINE PATIENTS (10 CAS LIMITES)
+#################################################################
+
+# 1. Pat_Sami : Polymédiqué (3 méd.) ET Pathologies multiples (2 patho)
+:Pat_Sami a :Patient ;
+    :nom "Ben Salah" ;
+    :prenom "Sami" ;
+    :age 58 ;
+    :prendMedicament :Med_Amoxicilline, :Med_Ibuprofene, :Med_Metformine ;
+    :souffreDe :DiabeteType2, :Douleur ;
+    :estSuiviPar :Dr_BenAmor .
+
+# 2. Pat_Leila : Cas limite (exactement 2 méd.) -> Démonstration idéale :
+#    Ajouter 1 médicament en démo la fait basculer immédiatement en Polymédiquée !
+:Pat_Leila a :Patient ;
+    :nom "Trabelsi" ;
+    :prenom "Leila" ;
+    :age 45 ;
+    :prendMedicament :Med_Metformine, :Med_Warfarine ;
+    :souffreDe :ThromboseVeineuse ;
+    :estSuiviPar :Dr_BenAmor .
+
+# 3. Pat_Hedi : 1 médicament, mais 3 pathologies (Comorbidités multiples)
+:Pat_Hedi a :Patient ;
+    :nom "Gharbi" ;
+    :prenom "Hedi" ;
+    :age 72 ;
+    :prendMedicament :Med_Amoxicilline ;
+    :souffreDe :InfectionBacterienne, :UlcereGastrique, :InsuffisanceHepatique ;
+    :estSuiviPar :Dr_Karray .
+
+# 4. Pat_Amina : Polymédiquée (4 méd.) + Interaction dangereuse (Warfarine + Aspirine)
+:Pat_Amina a :Patient ;
+    :nom "Ben Salah" ;
+    :prenom "Amina" ;
+    :age 67 ;
+    :prendMedicament :Med_Warfarine, :Med_Aspirine, :Med_Ibuprofene, :Med_Paracetamol ;
+    :souffreDe :ThromboseVeineuse, :Douleur ;
+    :estSuiviPar :Dr_BenAmor .
+
+# 5. Pat_Karim : Patient sain (0 médicament, 0 pathologie, aucun médecin)
+:Pat_Karim a :Patient ;
+    :nom "Mejri" ;
+    :prenom "Karim" ;
+    :age 24 .
+
+# 6. Pat_Yassine : Standard (1 médicament, 1 pathologie, 1 médecin)
+:Pat_Yassine a :Patient ;
+    :nom "Hammami" ;
+    :prenom "Yassine" ;
+    :age 35 ;
+    :prendMedicament :Med_Paracetamol ;
+    :souffreDe :Fievre ;
+    :estSuiviPar :Dr_Karray .
+
+# 7. Pat_Salma : Polymédiquée (3 méd.), sans médecin référent assigné
+:Pat_Salma a :Patient ;
+    :nom "Bouazizi" ;
+    :prenom "Salma" ;
+    :age 51 ;
+    :prendMedicament :Med_Amoxicilline, :Med_Paracetamol, :Med_Ibuprofene ;
+    :souffreDe :InfectionBacterienne .
+
+# 8. Pat_Moncef : 2 médicaments, 2 pathologies (Comorbidités)
+:Pat_Moncef a :Patient ;
+    :nom "Chaabane" ;
+    :prenom "Moncef" ;
+    :age 63 ;
+    :prendMedicament :Med_Metformine, :Med_Amoxicilline ;
+    :souffreDe :DiabeteType2, :InsuffisanceRenale ;
+    :estSuiviPar :Dr_Mansour .
+
+# 9. Pat_Fatma : Cas gériatrique lourd (5 médicaments, 4 pathologies)
+:Pat_Fatma a :Patient ;
+    :nom "Driss" ;
+    :prenom "Fatma" ;
+    :age 81 ;
+    :prendMedicament :Med_Metformine, :Med_Amoxicilline, :Med_Ibuprofene, :Med_Warfarine, :Med_Paracetamol ;
+    :souffreDe :DiabeteType2, :HypertensionArterielle, :ThromboseVeineuse, :Douleur ;
+    :estSuiviPar :Dr_BenAmor .
+
+# 10. Pat_Nour : Enfant (1 médicament, 2 pathologies, sans médecin)
+:Pat_Nour a :Patient ;
+    :nom "Riahi" ;
+    :prenom "Nour" ;
+    :age 8 ;
+    :prendMedicament :Med_Paracetamol ;
+    :souffreDe :Fievre, :Douleur .
+
+
+#################################################################
+#     PRESCRIPTION (TEST CONTRAINTE ONTOLOGIQUE DE SUPPRESSION)
+#################################################################
+
+:Presc_001 a :Prescription ;
+    :pourPatient :Pat_Amina ;
+    :emisePar :Dr_BenAmor ;
+    :prescritMedicament :Med_Warfarine ;
+    :datePrescription "2026-10-25T09:00:00"^^xsd:dateTime ;
+    :dureeTraitementJours 30 ;
+    :posologie "1 comprimé par jour au coucher" .

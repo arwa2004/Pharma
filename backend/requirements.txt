@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+requests
+rdflib
+spacy
+scikit-learn
