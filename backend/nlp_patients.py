@@ -1,11 +1,4 @@
-"""Enregistrement des intentions NLP pour le domaine Patients (Membre C).
 
-Chaque intention comprend :
-- Les phrases d'exemples annotées pour l'appariement spaCy
-- Les mots-clés discriminants
-- Le générateur de requête SPARQL dynamique
-- Le synthétiseur de réponse en langage naturel
-"""
 import re
 from typing import Any, Dict, List, Tuple
 
@@ -14,11 +7,14 @@ from nlp_engine import Intention, enregistrer_intention
 
 # 1. Patients Polymédiqués (Classe définie ontologique >= 3 médicaments)
 def _gen_polymediques(entites: Dict[str, Any]) -> Tuple[str, str]:
+    # FIX: Use :Prescription to find medications instead of direct :prendMedicament
     sparql = """PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
 SELECT ?id ?nom ?prenom (COUNT(DISTINCT ?m) AS ?nb_medicaments) WHERE {
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nom .
   OPTIONAL { ?p :prenom ?prenom }
-  ?p :prendMedicament ?m .
+  
+  ?presc a :Prescription ; :pourPatient ?p ; :prescritMedicament ?m .
+  
   BIND(STRAFTER(STR(?p), "#") AS ?id)
 }
 GROUP BY ?id ?nom ?prenom
@@ -96,7 +92,7 @@ enregistrer_intention(
 )
 
 
-# 3. Médicaments pris par un patient spécifique (:prendMedicament)
+# 3. Médicaments pris par un patient spécifique (via Prescription)
 def _gen_medicaments_patient(entites: Dict[str, Any]) -> Tuple[str, str]:
     nom = entites.get("nom", "")
     filtre = ""
@@ -106,12 +102,19 @@ def _gen_medicaments_patient(entites: Dict[str, Any]) -> Tuple[str, str]:
     REGEX(COALESCE(?prenomPatient, ""), "{re.escape(nom)}", "i") ||
     REGEX(STR(?p), "{re.escape(nom)}", "i")
   )"""
+    
     sparql = f"""PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
 SELECT DISTINCT ?nomPatient ?prenomPatient ?idMed ?nomCommercial WHERE {{
-  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ; :prendMedicament ?m .
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient .
   OPTIONAL {{ ?p :prenom ?prenomPatient }}
+  
+  ?presc a :Prescription ;
+         :pourPatient ?p ;
+         :prescritMedicament ?m .
+         
   OPTIONAL {{ ?m :nomCommercial ?nomCommercial }}
   BIND(STRAFTER(STR(?m), "#") AS ?idMed)
+  
   {filtre}
 }} ORDER BY ?nomPatient ?nomCommercial"""
     return "SELECT", sparql
@@ -199,7 +202,7 @@ enregistrer_intention(
 )
 
 
-# 5. Médecin référent d'un patient (:estSuiviPar)
+# 5. Médecin référent d'un patient (Direct ou via Prescription)
 def _gen_medecin_patient(entites: Dict[str, Any]) -> Tuple[str, str]:
     nom = entites.get("nom", "")
     filtre = ""
@@ -209,10 +212,20 @@ def _gen_medecin_patient(entites: Dict[str, Any]) -> Tuple[str, str]:
     REGEX(COALESCE(?prenomPatient, ""), "{re.escape(nom)}", "i") ||
     REGEX(STR(?p), "{re.escape(nom)}", "i")
   )"""
+    
     sparql = f"""PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
 SELECT DISTINCT ?nomPatient ?prenomPatient ?nomDoc ?prenomDoc ?idDoc WHERE {{
-  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ; :estSuiviPar ?d .
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient .
   OPTIONAL {{ ?p :prenom ?prenomPatient }}
+  
+  {{
+    ?p :estSuiviPar ?d .
+  }} UNION {{
+    ?presc a :Prescription ;
+           :pourPatient ?p ;
+           :emisePar ?d .
+  }}
+  
   OPTIONAL {{ ?d :nom ?nomDoc }}
   OPTIONAL {{ ?d :prenom ?prenomDoc }}
   BIND(STRAFTER(STR(?d), "#") AS ?idDoc)
@@ -250,21 +263,26 @@ enregistrer_intention(
 )
 
 
-# 6. Interactions médicamenteuses chez les patients (Requête croisée ontologique)
+# 6. Interactions médicamenteuses chez les patients (Requête croisée via Prescription)
 def _gen_interactions(entites: Dict[str, Any]) -> Tuple[str, str]:
+    # FIX: Using the direct :interagitAvec property found in your dataset
     sparql = """PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
-SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {
-  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ;
-     :prendMedicament ?a , ?b .
-  ?a :participeInteraction ?i .
-  ?b :participeInteraction ?i .
-  FILTER(STR(?a) < STR(?b))
-  OPTIONAL { ?a :nomCommercial ?nomMedA }
-  OPTIONAL { ?b :nomCommercial ?nomMedB }
-  OPTIONAL { ?i :libelle ?libelle }
-  BIND(STRAFTER(STR(?a), "#") AS ?medA)
-  BIND(STRAFTER(STR(?b), "#") AS ?medB)
-  BIND(STRAFTER(STR(?i), "#") AS ?interaction)
+SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB WHERE {
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient .
+  
+  ?presc a :Prescription ; :pourPatient ?p ; :prescritMedicament ?medA, ?medB .
+  
+  # Check for the direct interaction property (either direction)
+  { ?medA :interagitAvec ?medB } UNION { ?medB :interagitAvec ?medA }
+  
+  # Avoid duplicate pairs (A-B and B-A)
+  FILTER(STR(?medA) < STR(?medB))
+  
+  OPTIONAL { ?medA :nomCommercial ?nomMedA }
+  OPTIONAL { ?medB :nomCommercial ?nomMedB }
+  
+  BIND(STRAFTER(STR(?medA), "#") AS ?medA_id)
+  BIND(STRAFTER(STR(?medB), "#") AS ?medB_id)
 } ORDER BY ?nomPatient"""
     return "SELECT", sparql
 
@@ -272,13 +290,15 @@ SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle 
 def _synth_interactions(lignes: List[Dict[str, Any]], entites: Dict[str, Any]) -> str:
     if not lignes:
         return "Aucun patient n'est actuellement exposé à une interaction médicamenteuse connue dans le dataset."
+    
     details = []
     for l in lignes:
-        mA = l.get("nomMedA") or l.get("medA")
-        mB = l.get("nomMedB") or l.get("medB")
-        desc = l.get("libelle", "interaction documentée")
-        details.append(f"{l.get('nomPatient')} ({mA} + {mB} : {desc})")
-    return f"Alerte clinique : {len(lignes)} cas d'interaction(s) détecté(s) chez les patients : " + "; ".join(details) + "."
+        mA = l.get("nomMedA") or l.get("medA", "Médicament A")
+        mB = l.get("nomMedB") or l.get("medB", "Médicament B")
+        details.append(f"{l.get('nomPatient')} (Interaction entre {mA} et {mB})")
+        
+    return f"Alerte clinique : {len(lignes)} patient(s) à risque d'interaction : " + "; ".join(details) + "."
+
 
 
 enregistrer_intention(
@@ -386,10 +406,14 @@ def _gen_ask_polymedique(entites: Dict[str, Any]) -> Tuple[str, str]:
     REGEX(COALESCE(?prenom, ""), "{re.escape(nom)}", "i") ||
     REGEX(STR(?p), "{re.escape(nom)}", "i")
   )"""
+    
+    # FIX: Use :Prescription instead of direct :prendMedicament
     sparql = f"""PREFIX : <http://www.esprit.tn/ontologies/pharma-sante#>
 ASK {{
-  ?p a/rdfs:subClassOf* :Patient ; :nom ?nom ;
-     :prendMedicament ?m1 , ?m2 , ?m3 .
+  ?p a/rdfs:subClassOf* :Patient ; :nom ?nom .
+  
+  ?presc a :Prescription ; :pourPatient ?p ; :prescritMedicament ?m1, ?m2, ?m3 .
+  
   OPTIONAL {{ ?p :prenom ?prenom }}
   FILTER(?m1 != ?m2 && ?m1 != ?m3 && ?m2 != ?m3)
   {filtre}
