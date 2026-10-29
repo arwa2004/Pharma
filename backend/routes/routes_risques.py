@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel, Field, model_validator
 
 import fuseki_client as fc
+from nlp_risques import analyser_symptomes
 
 router = APIRouter(prefix="/risques", tags=["Risques"])
 
@@ -13,6 +14,10 @@ IdRisque = Annotated[str, Path(pattern=r"^[A-Za-z0-9_\-]+$", description="ex : E
 IdEntite = Annotated[str, Path(pattern=r"^[A-Za-z0-9_\-]+$", description="ex : Med_Warfarine")]
 
 
+# ---------- Modèles Pydantic ----------
+
+class SymptomeRequest(BaseModel):
+    texte: str
 
 class EffetIn(BaseModel):
     libelle: str = Field(..., min_length=1)
@@ -77,7 +82,25 @@ def _generer_id(prefixe: str, libelle: str) -> str:
     return candidat
 
 
-# ---------- Référentiels pour menus déroulants UI ----------
+# =====================================================================
+# NLP : ANALYSEUR DE SYMPTÔMES
+# =====================================================================
+
+@router.post("/analyser")
+async def analyser_texte_symptomes(payload: SymptomeRequest):
+    """Analyse un texte en langage naturel pour détecter les risques médicamenteux."""
+    if len(payload.texte.strip()) < 5:
+        raise HTTPException(400, "Veuillez fournir une description plus détaillée.")
+        
+    resultat = analyser_symptomes(payload.texte)
+    
+    # On utilise _reponse pour garder le même format que le reste de l'API
+    return _reponse(resultat, "Analyse NLP locale (SPARQL généré dynamiquement en arrière-plan)")
+
+
+# =====================================================================
+# RÉFÉRENTIELS ET CLASSES DÉFINIES
+# =====================================================================
 
 @router.get("/referentiel/medicaments")
 def referentiel_medicaments():
@@ -102,8 +125,6 @@ SELECT DISTINCT ?id ?nom WHERE {
 } ORDER BY ?nom ?id"""
     return _reponse(fc.select(requete), requete)
 
-
-# ---------- Vues issues des classes définies (HermiT) ----------
 
 @router.get("/medicaments-risque")
 def medicaments_a_risque():
@@ -149,7 +170,7 @@ ORDER BY ?nom"""
     return _reponse(fc.select(requete), requete)
 
 
-# ---------- Requêtes SPARQL variées (UNION, alertes croisées) ----------
+# ---------- Requêtes SPARQL variées ----------
 
 @router.get("/recherche/union")
 def recherche_croisee_union():
@@ -275,8 +296,6 @@ def creer_effet(e: EffetIn):
     if e.frequenceEffet is not None:
         triplets.append(f":frequenceEffet {e.frequenceEffet}")
 
-    # Axiome OWL : EffetSecondaire minCardinality 1 sur :estEffetDe (inverse de :aEffetSecondaire)
-    # -> on insère donc aussi le lien depuis le médicament, dans la même transaction.
     requete = (
         f"INSERT DATA {{\n  :{id_effet} " + " ;\n    ".join(triplets) + " .\n"
         f"  :{e.id_medicament} :aEffetSecondaire :{id_effet} .\n}}"
@@ -305,7 +324,6 @@ def modifier_effet(e: EffetUpdate, id_effet: IdRisque):
         operations.append(f"DELETE WHERE {{ :{id_effet} :frequenceEffet ?a }}")
         operations.append(f"INSERT DATA {{ :{id_effet} :frequenceEffet {champs['frequenceEffet']} }}")
     if "grave" in champs:
-        # Classes disjointes (owl:AllDisjointClasses) : on retire l'ancien type puis on insère le nouveau.
         nouvelle_classe = "EffetSecondaireGrave" if champs["grave"] else "EffetSecondaireBenin"
         ancienne_classe = "EffetSecondaireBenin" if champs["grave"] else "EffetSecondaireGrave"
         operations.append(f"DELETE DATA {{ :{id_effet} a :{ancienne_classe} }}")
@@ -330,7 +348,6 @@ def supprimer_effet(id_effet: IdRisque):
 
 @router.post("/effets/{id_effet}/medicaments/{id_medicament}", status_code=201)
 def associer_medicament_effet(id_effet: IdRisque, id_medicament: IdEntite):
-    """Associe l'effet secondaire à un médicament supplémentaire (:aEffetSecondaire)."""
     if not _existe(id_effet):
         raise HTTPException(404, f"Effet secondaire {id_effet} introuvable")
     if not _existe(id_medicament):
@@ -342,7 +359,6 @@ def associer_medicament_effet(id_effet: IdRisque, id_medicament: IdEntite):
 
 @router.delete("/effets/{id_effet}/medicaments/{id_medicament}")
 def retirer_medicament_effet(id_effet: IdRisque, id_medicament: IdEntite):
-    """Retire le lien :aEffetSecondaire, en respectant l'axiome minCardinality 1 sur :estEffetDe."""
     if not _existe(id_effet):
         raise HTTPException(404, f"Effet secondaire {id_effet} introuvable")
 
@@ -367,7 +383,6 @@ def lister_contre_indications(
     q: Optional[str] = Query(None, description="recherche dans le libellé"),
     type: Optional[str] = Query(None, pattern="^(absolue|relative)$"),
 ):
-    """Liste toutes les contre-indications avec le nombre de médicaments concernés."""
     filtres = []
     if q:
         filtres.append(f'FILTER(REGEX(?libelle, {fc.lit(re.escape(q))}, "i"))')
@@ -389,7 +404,6 @@ ORDER BY DESC(?absolue) ?libelle"""
 
 @router.get("/contre-indications/{id_ci}")
 def fiche_contre_indication(id_ci: IdRisque):
-    """Fiche détaillée : attributs + médicaments concernés + pathologies liées."""
     info = fc.select(f"""
 SELECT ?libelle ?absolue WHERE {{
   :{id_ci} a/rdfs:subClassOf* :ContreIndication ; :libelle ?libelle .
@@ -418,14 +432,12 @@ SELECT ?id ?nom WHERE {{
 
 @router.get("/contre-indications/{id_ci}/ask-absolue")
 def verifier_absolue_ask(id_ci: IdRisque):
-    """Requête ASK : teste directement l'appartenance à :ContreIndicationAbsolue."""
     requete = f"ASK {{ :{id_ci} a :ContreIndicationAbsolue }}"
     return _reponse({"id": id_ci, "absolue_ask": fc.ask(requete)}, requete)
 
 
 @router.get("/contre-indications/{id_ci}/describe")
 def describe_contre_indication(id_ci: IdRisque):
-    """Requête DESCRIBE : sous-graphe RDF Turtle de la contre-indication."""
     requete = f"DESCRIBE :{id_ci}"
     return _reponse({"id": id_ci, "rdf_turtle": fc.describe(requete)}, requete)
 
@@ -521,7 +533,6 @@ def associer_pathologie_ci(id_ci: IdRisque, id_pathologie: IdEntite):
 
 @router.delete("/contre-indications/{id_ci}/pathologies/{id_pathologie}")
 def retirer_pathologie_ci(id_ci: IdRisque, id_pathologie: IdEntite):
-    """Retire le lien :concernePathologie, en respectant l'axiome someValuesFrom :Pathologie (≥ 1)."""
     if not _existe(id_ci):
         raise HTTPException(404, f"Contre-indication {id_ci} introuvable")
     liees = fc.select(f"SELECT ?p WHERE {{ :{id_ci} :concernePathologie ?p }}")
@@ -542,7 +553,6 @@ def retirer_pathologie_ci(id_ci: IdRisque, id_pathologie: IdEntite):
 
 @router.get("/interactions")
 def lister_interactions(q: Optional[str] = Query(None, description="recherche dans le libellé")):
-    """Liste toutes les interactions avec les médicaments impliqués (agrégation GROUP_CONCAT)."""
     filtre = f'FILTER(REGEX(?libelle, {fc.lit(re.escape(q))}, "i"))' if q else ""
     requete = f"""
 SELECT ?id ?libelle (COUNT(DISTINCT ?m) AS ?nb_medicaments)
@@ -558,7 +568,6 @@ ORDER BY ?libelle"""
 
 @router.get("/interactions/{id_interaction}")
 def fiche_interaction(id_interaction: IdRisque):
-    """Fiche détaillée d'une interaction : libellé + médicaments impliqués."""
     info = fc.select(f"""
 SELECT ?libelle WHERE {{ :{id_interaction} a :Interaction ; :libelle ?libelle }} LIMIT 1""")
     if not info:
@@ -577,7 +586,6 @@ SELECT ?id ?nom WHERE {{
 
 @router.get("/interactions/{id_interaction}/describe")
 def describe_interaction(id_interaction: IdRisque):
-    """Requête DESCRIBE : sous-graphe RDF Turtle de l'interaction."""
     requete = f"DESCRIBE :{id_interaction}"
     return _reponse({"id": id_interaction, "rdf_turtle": fc.describe(requete)}, requete)
 
@@ -590,8 +598,6 @@ def creer_interaction(i: InteractionIn):
         raise HTTPException(404, f"Médicament {i.id_medicament_b} introuvable")
 
     id_interaction = _generer_id("Int", i.libelle)
-    # Axiome OWL : Interaction minCardinality 2 sur :impliqueMedicament -> créée avec les 2 liens.
-    # Ajoute également :interagitAvec (propriété symétrique directe) entre les 2 médicaments.
     requete = f"""INSERT DATA {{
   :{id_interaction} a :Interaction ; :libelle {fc.lit(i.libelle)} ;
     :impliqueMedicament :{i.id_medicament_a} , :{i.id_medicament_b} .
@@ -622,7 +628,6 @@ def supprimer_interaction(id_interaction: IdRisque):
     if not _existe(id_interaction):
         raise HTTPException(404, f"Interaction {id_interaction} introuvable")
 
-    # Retire aussi le lien symétrique :interagitAvec associé à cette interaction (nettoyage).
     medicaments = fc.select(f"SELECT ?m WHERE {{ :{id_interaction} :impliqueMedicament ?m }}")
 
     requete_principale = (
@@ -631,7 +636,6 @@ def supprimer_interaction(id_interaction: IdRisque):
     )
     fc.update(requete_principale)
 
-    # DELETE WHERE séparé pour chaque sens : n'échoue pas si le triplet symétrique n'existe déjà plus.
     if len(medicaments) == 2:
         a, b = (m["m"] for m in medicaments)
         fc.update(f"DELETE WHERE {{ :{a} :interagitAvec :{b} }}")
@@ -642,7 +646,6 @@ def supprimer_interaction(id_interaction: IdRisque):
 
 @router.post("/interactions/{id_interaction}/medicaments/{id_medicament}", status_code=201)
 def ajouter_medicament_interaction(id_interaction: IdRisque, id_medicament: IdEntite):
-    """Ajoute un médicament supplémentaire à une interaction existante."""
     if not _existe(id_interaction):
         raise HTTPException(404, f"Interaction {id_interaction} introuvable")
     if not _existe(id_medicament):
@@ -654,7 +657,6 @@ def ajouter_medicament_interaction(id_interaction: IdRisque, id_medicament: IdEn
 
 @router.delete("/interactions/{id_interaction}/medicaments/{id_medicament}")
 def retirer_medicament_interaction(id_interaction: IdRisque, id_medicament: IdEntite):
-    """Retire un médicament, en respectant l'axiome minCardinality 2 sur :impliqueMedicament."""
     if not _existe(id_interaction):
         raise HTTPException(404, f"Interaction {id_interaction} introuvable")
     lies = fc.select(f"SELECT ?m WHERE {{ :{id_interaction} :impliqueMedicament ?m }}")
