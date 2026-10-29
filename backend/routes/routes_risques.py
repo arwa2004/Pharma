@@ -140,7 +140,7 @@ def medicaments_avec_interaction():
     """Classe définie :MedicamentAInteraction."""
     requete = """
 SELECT DISTINCT ?id ?nom (COUNT(DISTINCT ?i) AS ?nb_interactions) WHERE {
-  ?m a/rdfs:subClassOf* :Medicament ; :participeInteraction ?i .
+  ?i :impliqueMedicament ?m . ?m a/rdfs:subClassOf* :Medicament .
   OPTIONAL { ?m :nomCommercial ?nom }
   BIND(STRAFTER(STR(?m), "#") AS ?id)
 }
@@ -188,7 +188,7 @@ WHERE {
   OPTIONAL { ?m :nomCommercial ?nom }
   OPTIONAL { ?m :aEffetSecondaire ?eg . ?eg a :EffetSecondaireGrave }
   OPTIONAL { ?m :aContreIndication ?cia . ?cia a :ContreIndicationAbsolue }
-  OPTIONAL { ?m :participeInteraction ?i }
+  OPTIONAL { ?i :impliqueMedicament ?m }
   BIND(STRAFTER(STR(?m), "#") AS ?id)
 }
 GROUP BY ?id ?nom
