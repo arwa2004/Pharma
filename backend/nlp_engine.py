@@ -240,7 +240,7 @@ class Lexique:
 
 
 _lexique: Optional[Lexique] = None
-_TTL_LEXIQUE = 300.0
+_TTL_LEXIQUE = 30.0  # Rafraîchissement toutes les 30 s (les POST/PUT/DELETE forcent un rechargement immédiat)
 
 
 def get_lexique(forcer: bool = False) -> Lexique:
