@@ -20,11 +20,8 @@ export default function App() {
         <Route path="patients" element={<Patients />} />
         <Route path="patients/:id" element={<PatientDetail />} />
         <Route path="vigilance" element={<Dashboard />} />
-        <Route path="risques" element={<Placeholder titre="Risques" membre="B" />} />
-        <Route path="prescriptions" element={<Prescriptions />} />
-        <Route path="medicaments" element={<Placeholder titre="Médicaments" membre="A" />} />
         <Route path="risques" element={<Risques />} />
-        <Route path="prescriptions" element={<Placeholder titre="Prescriptions" membre="D" />} />
+        <Route path="prescriptions" element={<Prescriptions />} />
         <Route path="assistant" element={<Assistant />} />
       </Route>
       <Route path="*" element={<Navigate to="/medicaments" replace />} />
