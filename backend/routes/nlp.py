@@ -8,7 +8,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 import nlp_engine
-import nlp_patients  # Enregistre automatiquement les intentions du domaine Patients
+import nlp_patients     # Enregistre automatiquement les intentions du domaine Patients (C)
+import nlp_medicaments  # Enregistre automatiquement les intentions du domaine Médicaments (A)
 
 router = APIRouter(prefix="/ask", tags=["Assistant NLP"])
 
@@ -29,25 +30,33 @@ def exemples_questions() -> Dict[str, Any]:
     return {
         "categories": [
             {
-                "titre": "Classes Définies (Règles Ontologiques)",
+                "titre": "Médicaments & Composition (Membre A)",
                 "questions": [
+                    "Quels médicaments contiennent du paracétamol ?",
+                    "Qui fabrique la Metformine ?",
+                    "Quelle est la forme de l'Aspirine ?",
+                    "Quels médicaments ont une contre-indication absolue ?",
+                    "Quels médicaments nécessitent une ordonnance ?",
+                    "Quels médicaments sont fabriqués par Sanofi ?",
+                    "Quels médicaments ont un dosage supérieur à 500 mg ?",
+                    "Quelle est la composition de l'Amoxicilline ?",
+                ],
+            },
+            {
+                "titre": "Classes Définies (Raisonnement Ontologique)",
+                "questions": [
+                    "Quels médicaments ont une contre-indication absolue ?",
                     "Quels patients sont polymédiqués ?",
                     "Quels patients ont des pathologies multiples ?",
                     "Est-ce que Sami est polymédiqué ?",
                 ],
             },
             {
-                "titre": "Relations & Antécédents Médicaux",
+                "titre": "Patients & Antécédents Médicaux (Membre C)",
                 "questions": [
                     "Quels médicaments prend Sami ?",
                     "De quoi souffre Sami ?",
                     "Qui est le médecin de Sami ?",
-                ],
-            },
-            {
-                "titre": "Alertes & Raisonnement Clinique",
-                "questions": [
-                    "Y a-t-il des patients avec des interactions médicamenteuses ?",
                     "Quels patients ont plus de 60 ans ?",
                     "Donne-moi la liste de tous les patients",
                 ],

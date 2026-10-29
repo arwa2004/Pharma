@@ -37,12 +37,53 @@ export const api = {
   put: (path, body = {}) => request(path, { method: "PUT", body: JSON.stringify(body) }),
   del: (path) => request(path, { method: "DELETE" }),
 
-  // Référentiels pour menus déroulants
+  // ==========================================
+  // DOMAINE A : MÉDICAMENTS & COMPOSITION
+  // ==========================================
+  listerMedicaments: (params = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, v);
+    });
+    const s = qs.toString();
+    return request(`/medicaments${s ? "?" + s : ""}`);
+  },
+  listerMedicamentsContreIndicationAbsolue: () => request("/medicaments/contre-indication-absolue"),
+  ficheMedicament: (id) => request(`/medicaments/${id}`),
+  creerMedicament: (data) => request("/medicaments", { method: "POST", body: JSON.stringify(data) }),
+  modifierMedicament: (id, data) => request(`/medicaments/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  supprimerMedicament: (id) => request(`/medicaments/${id}`, { method: "DELETE" }),
+  askOrdonnance: (id) => request(`/medicaments/${id}/ask-ordonnance`),
+  describeMedicament: (id) => request(`/medicaments/${id}/describe`),
+  rechercheRapide: (q) => request(`/medicaments/recherche?q=${encodeURIComponent(q)}`),
+
+  // Référentiels Domaine A
+  referentielMolecules: () => request("/medicaments/referentiel/molecules"),
+  referentielFormes: () => request("/medicaments/referentiel/formes"),
+  referentielVoies: () => request("/medicaments/referentiel/voies"),
+  referentielClasses: () => request("/medicaments/referentiel/classes"),
+  referentielLaboratoires: () => request("/medicaments/referentiel/laboratoires"),
+  referentielExcipients: () => request("/medicaments/referentiel/excipients"),
+
+  // Composition (Relations)
+  associerMolecule: (idMed, idMol) => request(`/medicaments/${idMed}/molecules/${idMol}`, { method: "POST" }),
+  dissocierMolecule: (idMed, idMol) => request(`/medicaments/${idMed}/molecules/${idMol}`, { method: "DELETE" }),
+  associerExcipient: (idMed, idExc) => request(`/medicaments/${idMed}/excipients/${idExc}`, { method: "POST" }),
+  dissocierExcipient: (idMed, idExc) => request(`/medicaments/${idMed}/excipients/${idExc}`, { method: "DELETE" }),
+
+  // Laboratoires (CRUD)
+  listerLaboratoires: () => request("/medicaments/laboratoires/liste"),
+  creerLaboratoire: (data) => request("/medicaments/laboratoires", { method: "POST", body: JSON.stringify(data) }),
+  modifierLaboratoire: (id, data) => request(`/medicaments/laboratoires/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  supprimerLaboratoire: (id) => request(`/medicaments/laboratoires/${id}`, { method: "DELETE" }),
+
+  // ==========================================
+  // DOMAINE C : PATIENTS (Référentiels & CRUD)
+  // ==========================================
   referentielMedicaments: () => request("/patients/referentiel/medicaments"),
   referentielPathologies: () => request("/patients/referentiel/pathologies"),
   referentielMedecins: () => request("/patients/referentiel/medecins"),
 
-  // CRUD des relations ontologiques
   ajouterMedicament: (idPatient, idMed) => request(`/patients/${idPatient}/medicaments/${idMed}`, { method: "POST" }),
   supprimerMedicament: (idPatient, idMed) => request(`/patients/${idPatient}/medicaments/${idMed}`, { method: "DELETE" }),
   ajouterPathologie: (idPatient, idPatho) => request(`/patients/${idPatient}/pathologies/${idPatho}`, { method: "POST" }),
@@ -50,12 +91,58 @@ export const api = {
   assignerMedecin: (idPatient, idMedecin) => request(`/patients/${idPatient}/medecin/${idMedecin}`, { method: "PUT" }),
   retirerMedecin: (idPatient) => request(`/patients/${idPatient}/medecin`, { method: "DELETE" }),
 
-  // Variété de requêtes SPARQL
   askPolymedique: (idPatient) => request(`/patients/${idPatient}/ask-polymedique`),
   describeRdf: (idPatient) => request(`/patients/${idPatient}/describe`),
   interactionsPatient: (idPatient) => request(`/patients/${idPatient}/interactions`),
 
-  // Module IA / NLP (spaCy local sans LLM)
+  // ---------- Module Risques (membre B) ----------
+  referentielMedicamentsRisques: () => request("/risques/referentiel/medicaments"),
+  referentielPathologiesRisques: () => request("/risques/referentiel/pathologies"),
+
+  // Vues / classes définies
+  medicamentsRisque: () => request("/risques/medicaments-risque"),
+  medicamentsCiAbsolue: () => request("/risques/medicaments-ci-absolue"),
+  medicamentsInteraction: () => request("/risques/medicaments-interaction"),
+  unionRisques: () => request("/risques/recherche/union"),
+  alertesVigilanceRisques: () => request("/risques/alertes/vigilance"),
+
+  // Effets secondaires
+  listerEffets: (params = "") => request(`/risques/effets${params}`),
+  ficheEffet: (id) => request(`/risques/effets/${id}`),
+  askGraveEffet: (id) => request(`/risques/effets/${id}/ask-grave`),
+  describeEffet: (id) => request(`/risques/effets/${id}/describe`),
+  creerEffet: (body) => request("/risques/effets", { method: "POST", body: JSON.stringify(body) }),
+  modifierEffet: (id, body) => request(`/risques/effets/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  supprimerEffet: (id) => request(`/risques/effets/${id}`, { method: "DELETE" }),
+  associerMedicamentEffet: (id, idMed) => request(`/risques/effets/${id}/medicaments/${idMed}`, { method: "POST" }),
+  retirerMedicamentEffet: (id, idMed) => request(`/risques/effets/${id}/medicaments/${idMed}`, { method: "DELETE" }),
+
+  // Contre-indications
+  listerContreIndications: (params = "") => request(`/risques/contre-indications${params}`),
+  ficheContreIndication: (id) => request(`/risques/contre-indications/${id}`),
+  askAbsolueCi: (id) => request(`/risques/contre-indications/${id}/ask-absolue`),
+  describeCi: (id) => request(`/risques/contre-indications/${id}/describe`),
+  creerContreIndication: (body) => request("/risques/contre-indications", { method: "POST", body: JSON.stringify(body) }),
+  modifierContreIndication: (id, body) => request(`/risques/contre-indications/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  supprimerContreIndication: (id) => request(`/risques/contre-indications/${id}`, { method: "DELETE" }),
+  associerMedicamentCi: (id, idMed) => request(`/risques/contre-indications/${id}/medicaments/${idMed}`, { method: "POST" }),
+  retirerMedicamentCi: (id, idMed) => request(`/risques/contre-indications/${id}/medicaments/${idMed}`, { method: "DELETE" }),
+  associerPathologieCi: (id, idPatho) => request(`/risques/contre-indications/${id}/pathologies/${idPatho}`, { method: "POST" }),
+  retirerPathologieCi: (id, idPatho) => request(`/risques/contre-indications/${id}/pathologies/${idPatho}`, { method: "DELETE" }),
+
+  // Interactions
+  listerInteractions: (params = "") => request(`/risques/interactions${params}`),
+  ficheInteraction: (id) => request(`/risques/interactions/${id}`),
+  describeInteraction: (id) => request(`/risques/interactions/${id}/describe`),
+  creerInteraction: (body) => request("/risques/interactions", { method: "POST", body: JSON.stringify(body) }),
+  modifierInteraction: (id, body) => request(`/risques/interactions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  supprimerInteraction: (id) => request(`/risques/interactions/${id}`, { method: "DELETE" }),
+  ajouterMedicamentInteraction: (id, idMed) => request(`/risques/interactions/${id}/medicaments/${idMed}`, { method: "POST" }),
+  retirerMedicamentInteraction: (id, idMed) => request(`/risques/interactions/${id}/medicaments/${idMed}`, { method: "DELETE" }),
+
+  // ==========================================
+  // MODULE IA / NLP (spaCy local sans LLM)
+  // ==========================================
   askNlp: (question) =>
     request("/ask", {
       method: "POST",
