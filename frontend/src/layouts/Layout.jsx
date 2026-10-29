@@ -1,29 +1,32 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
-  AppBar, Box, Drawer, List, ListItemButton,
-  ListItemIcon, ListItemText, Toolbar, Typography, Stack, Chip
+  AppBar, Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
+  Toolbar, Typography, Stack, Chip, FormControlLabel, Switch, Tooltip
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import MedicationIcon from "@mui/icons-material/Medication";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
-import DashboardIcon from "@mui/icons-material/Dashboard";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import SchoolIcon from "@mui/icons-material/School";
+import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
-const LARGEUR_MENU = 215;
+const LARGEUR_MENU = 225;
 
 const MENU = [
-  { chemin: "/patients", titre: "Gestion Patients", icon: <PeopleIcon fontSize="small" /> },
-  { chemin: "/vigilance", titre: "Vigilance Clinique", icon: <DashboardIcon fontSize="small" /> },
-  { chemin: "/medicaments", titre: "Médicaments", icon: <MedicationIcon fontSize="small" /> },
-  { chemin: "/risques", titre: "Risques", icon: <WarningAmberIcon fontSize="small" /> },
-  { chemin: "/prescriptions", titre: "Prescriptions", icon: <AssignmentIcon fontSize="small" /> },
-  { chemin: "/assistant", titre: "Assistant NLP", icon: <SmartToyIcon fontSize="small" /> },
+  { chemin: "/patients", titre: "Patients", icon: <PeopleIcon /> },
+  { chemin: "/vigilance", titre: "Alertes et suivi", icon: <NotificationsActiveIcon /> },
+  { chemin: "/medicaments", titre: "Médicaments", icon: <MedicationIcon /> },
+  { chemin: "/risques", titre: "Risques des médicaments", icon: <WarningAmberIcon /> },
+  { chemin: "/prescriptions", titre: "Prescriptions", icon: <AssignmentIcon /> },
+  { chemin: "/assistant", titre: "Assistant NLP", icon: <SmartToyIcon /> },
 ];
 
 export default function Layout() {
   const { pathname } = useLocation();
+  const { modeSoutenance, setModeSoutenance } = useSoutenance();
 
   return (
     <Box sx={{ display: "flex", bgcolor: "#f8fafc", minHeight: "100vh" }}>
@@ -33,24 +36,65 @@ export default function Layout() {
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
           bgcolor: "#065f46",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          borderBottom: "1px solid rgba(255,255,255,0.12)",
         }}
       >
-        <Toolbar variant="dense" sx={{ justifyContent: "space-between", minHeight: 48, px: 2 }}>
+        <Toolbar sx={{ justifyContent: "space-between", minHeight: 56, px: 2.5 }}>
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <LocalHospitalIcon fontSize="small" />
-            <Typography variant="subtitle1" fontWeight="bold">
+            <LocalHospitalIcon />
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "1.15rem", letterSpacing: -0.3 }}>
               Pharma-Santé
             </Typography>
             <Chip
-              label="Web Sémantique · Domaine Patients"
+              label="Espace Patients"
               size="small"
-              sx={{ bgcolor: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "0.7rem", height: 22 }}
+              sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "#fff", fontSize: "0.78rem", height: 24, fontWeight: 600 }}
             />
           </Stack>
-          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem" }}>
-            Apache Jena Fuseki · SPARQL 1.1 · spaCy NLP
-          </Typography>
+
+          {/* Interrupteur Mode Soutenance */}
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Tooltip
+              title="Active l'affichage des requêtes SPARQL brutes, des axiomes OWL et du démonstrateur pour l'évaluation"
+              arrow
+            >
+              <Box
+                sx={{
+                  bgcolor: modeSoutenance ? "rgba(255, 237, 213, 0.2)" : "rgba(255,255,255,0.08)",
+                  px: 1.5,
+                  py: 0.4,
+                  borderRadius: 2,
+                  border: modeSoutenance ? "1px solid #fde68a" : "1px solid transparent",
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={modeSoutenance}
+                      onChange={(e) => setModeSoutenance(e.target.checked)}
+                      color="warning"
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Stack direction="row" spacing={0.6} alignItems="center">
+                      <SchoolIcon sx={{ fontSize: 18, color: modeSoutenance ? "#fef08a" : "#cbd5e1" }} />
+                      <Typography
+                        sx={{
+                          fontSize: "0.84rem",
+                          fontWeight: 600,
+                          color: modeSoutenance ? "#fef08a" : "#e2e8f0",
+                        }}
+                      >
+                        Mode soutenance {modeSoutenance ? "(actif)" : ""}
+                      </Typography>
+                    </Stack>
+                  }
+                  sx={{ m: 0 }}
+                />
+              </Box>
+            </Tooltip>
+          </Stack>
         </Toolbar>
       </AppBar>
 
@@ -68,13 +112,13 @@ export default function Layout() {
           },
         }}
       >
-        <Toolbar variant="dense" sx={{ minHeight: 48 }} />
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="caption" sx={{ color: "#a7f3d0", fontWeight: "bold", letterSpacing: 0.5, fontSize: "0.68rem" }}>
-            NAVIGATION
+        <Toolbar sx={{ minHeight: 56 }} />
+        <Box sx={{ px: 2.5, py: 2 }}>
+          <Typography variant="caption" sx={{ color: "#a7f3d0", fontWeight: 700, letterSpacing: 0.8, fontSize: "0.72rem" }}>
+            MENU PRINCIPAL
           </Typography>
         </Box>
-        <List sx={{ px: 1, py: 0 }}>
+        <List sx={{ px: 1.5, py: 0 }}>
           {MENU.map((m) => {
             const actif = pathname === m.chemin || pathname.startsWith(m.chemin + "/");
             return (
@@ -84,20 +128,21 @@ export default function Layout() {
                 to={m.chemin}
                 selected={actif}
                 sx={{
-                  borderRadius: 1.5,
-                  mb: 0.4,
-                  py: 0.75,
+                  borderRadius: 2,
+                  mb: 0.6,
+                  py: 1,
+                  px: 1.5,
                   color: actif ? "#ffffff" : "#a7f3d0",
                   bgcolor: actif ? "rgba(16, 185, 129, 0.3) !important" : "transparent",
                   "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#ffffff" },
                 }}
               >
-                <ListItemIcon sx={{ color: actif ? "#34d399" : "#a7f3d0", minWidth: 32 }}>
+                <ListItemIcon sx={{ color: actif ? "#34d399" : "#a7f3d0", minWidth: 36 }}>
                   {m.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={m.titre}
-                  primaryTypographyProps={{ fontSize: "0.8rem", fontWeight: actif ? 600 : 400 }}
+                  primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: actif ? 700 : 500 }}
                 />
               </ListItemButton>
             );
@@ -106,8 +151,8 @@ export default function Layout() {
       </Drawer>
 
       {/* Contenu principal */}
-      <Box component="main" sx={{ flexGrow: 1, p: 2.5, width: `calc(100% - ${LARGEUR_MENU}px)` }}>
-        <Toolbar variant="dense" sx={{ minHeight: 48 }} />
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: `calc(100% - ${LARGEUR_MENU}px)` }}>
+        <Toolbar sx={{ minHeight: 56 }} />
         <Outlet />
       </Box>
     </Box>

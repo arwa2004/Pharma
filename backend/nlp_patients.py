@@ -256,8 +256,7 @@ def _gen_interactions(entites: Dict[str, Any]) -> Tuple[str, str]:
 SELECT DISTINCT ?nomPatient ?medA ?nomMedA ?medB ?nomMedB ?interaction ?libelle WHERE {
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ;
      :prendMedicament ?a , ?b .
-  ?a :participeInteraction ?i .
-  ?b :participeInteraction ?i .
+  ?i :impliqueMedicament ?a , ?b .
   FILTER(STR(?a) < STR(?b))
   OPTIONAL { ?a :nomCommercial ?nomMedA }
   OPTIONAL { ?b :nomCommercial ?nomMedB }

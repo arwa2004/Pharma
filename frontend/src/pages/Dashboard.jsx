@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Alert, Box, Button, Card, CardContent, CircularProgress,
   Grid, Paper, Stack, Typography, Chip, Table, TableHead,
-  TableBody, TableRow, TableCell, TableContainer
+  TableBody, TableRow, TableCell, TableContainer, Tooltip
 } from "@mui/material";
 import WarningIcon from "@mui/icons-material/Warning";
 import MedicationIcon from "@mui/icons-material/Medication";
@@ -11,9 +11,12 @@ import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PeopleIcon from "@mui/icons-material/People";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { api } from "../api.js";
+import { useSoutenance } from "../context/SoutenanceContext.jsx";
 
 export default function Dashboard() {
+  const { modeSoutenance } = useSoutenance();
   const [chargement, setChargement] = useState(true);
   const [stats, setStats] = useState({ polymediques: [], pathologiesMultiples: [], interactions: [] });
   const [rechercheRapide, setRechercheRapide] = useState("");
@@ -57,90 +60,197 @@ export default function Dashboard() {
   const patientsVigilance = Array.from(vigilanceMap.values());
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="h6" fontWeight="bold" color="#065f46">Tableau de Vigilance Clinique</Typography>
-          <Chip label="Requête SPARQL HAVING" color="success" size="small" variant="outlined" />
-        </Stack>
-        <Button variant="outlined" color="success" size="small" startIcon={<PeopleIcon fontSize="small" />}
-          onClick={() => navigate("/patients")}>
-          Tous les dossiers
+    <Box sx={{ maxWidth: 1280, mx: "auto" }}>
+      {/* En-tête */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+        <Box>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Typography variant="h4" color="#0f172a" sx={{ letterSpacing: -0.5 }}>
+              Alertes et suivi
+            </Typography>
+            {modeSoutenance && (
+              <Chip
+                label="Requête SPARQL HAVING & Règle HermiT"
+                size="small"
+                sx={{ bgcolor: "#ecfdf5", color: "#065f46", fontWeight: 700, fontSize: "0.78rem" }}
+              />
+            )}
+          </Stack>
+          <Typography variant="body1" color="#64748b" sx={{ mt: 0.3 }}>
+            Surveillance des traitements à risque et des patients prioritaires
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<PeopleIcon />}
+          onClick={() => navigate("/patients")}
+          sx={{ borderRadius: 2.5, px: 2, fontSize: "0.88rem" }}
+        >
+          Tous les patients
         </Button>
       </Stack>
 
-      {/* Recherche rapide */}
-      <Paper component="form" onSubmit={handleSearch}
-        sx={{ p: 1.25, mb: 2, display: "flex", alignItems: "center", gap: 1.5, bgcolor: "#ffffff", borderRadius: 2 }}>
-        <SearchIcon color="action" fontSize="small" />
-        <Box component="input" type="text"
+      {/* Barre de recherche rapide */}
+      <Paper
+        component="form"
+        onSubmit={handleSearch}
+        sx={{
+          p: 1.5,
+          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          bgcolor: "#ffffff",
+          borderRadius: 3,
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <SearchIcon sx={{ color: "#94a3b8", fontSize: 22, ml: 1 }} />
+        <Box
+          component="input"
+          type="text"
           placeholder="Recherche rapide d'un patient par nom ou prénom..."
-          value={rechercheRapide} onChange={(e) => setRechercheRapide(e.target.value)}
-          sx={{ flexGrow: 1, border: "none", outline: "none", fontSize: "0.82rem", bgcolor: "transparent" }}
+          value={rechercheRapide}
+          onChange={(e) => setRechercheRapide(e.target.value)}
+          sx={{
+            flexGrow: 1,
+            border: "none",
+            outline: "none",
+            fontSize: "0.92rem",
+            bgcolor: "transparent",
+            fontFamily: "inherit",
+          }}
         />
-        <Button type="submit" variant="outlined" color="success" size="small">Rechercher</Button>
+        <Button
+          type="submit"
+          variant="contained"
+          sx={{
+            bgcolor: "#065f46",
+            "&:hover": { bgcolor: "#044e39" },
+            borderRadius: 2,
+            px: 2.5,
+            fontSize: "0.88rem",
+          }}
+        >
+          Rechercher
+        </Button>
       </Paper>
 
-      {erreur && <Alert severity="error" sx={{ mb: 1.5, py: 0.5, fontSize: "0.8rem" }}>{erreur}</Alert>}
+      {erreur && (
+        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5, fontSize: "0.88rem" }}>
+          {erreur}
+        </Alert>
+      )}
 
       {chargement ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress color="success" size={24} /></Box>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress color="primary" size={32} />
+        </Box>
       ) : (
-        <Stack spacing={2}>
-          <Grid container spacing={2}>
+        <Stack spacing={3}>
+          {/* 3 Cartes d'indicateurs clairs */}
+          <Grid container spacing={2.5}>
             <Grid item xs={12} sm={4}>
-              <Card sx={{ bgcolor: "#fffbeb", borderLeft: "5px solid #f59e0b", borderRadius: 2 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+              <Card sx={{ bgcolor: "#fffbeb", borderLeft: "6px solid #f59e0b", borderRadius: 3 }}>
+                <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Box>
-                      <Typography variant="caption" color="#b45309" fontWeight="bold">Polymédication (≥ 3 médicaments)</Typography>
-                      <Typography variant="h4" fontWeight="bold" color="#b45309">{stats.polymediques.length}</Typography>
-                      <Typography variant="caption" color="text.secondary">Règle sémantique : COUNT médicaments ≥ 3</Typography>
-                    </Box>
-                    <Box sx={{ p: 1, bgcolor: "#fef3c7", borderRadius: "50%" }}>
-                      <MedicationIcon fontSize="small" sx={{ color: "#d97706" }} />
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Card sx={{ bgcolor: "#eff6ff", borderLeft: "5px solid #3b82f6", borderRadius: 2 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="caption" color="#1d4ed8" fontWeight="bold">Comorbidités multiples (≥ 2 pathologies)</Typography>
-                      <Typography variant="h4" fontWeight="bold" color="#1d4ed8">{stats.pathologiesMultiples.length}</Typography>
-                      <Typography variant="caption" color="text.secondary">Règle sémantique : COUNT pathologies ≥ 2</Typography>
-                    </Box>
-                    <Box sx={{ p: 1, bgcolor: "#dbeafe", borderRadius: "50%" }}>
-                      <WarningIcon fontSize="small" sx={{ color: "#2563eb" }} />
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Card sx={{
-                bgcolor: stats.interactions.length > 0 ? "#fef2f2" : "#f0fdf4",
-                borderLeft: `5px solid ${stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}`,
-                borderRadius: 2,
-              }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="caption" fontWeight="bold"
-                        color={stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}>
-                        Interactions médicamenteuses (requête croisée)
+                      <Stack direction="row" spacing={0.6} alignItems="center">
+                        <Typography variant="caption" color="#b45309" fontWeight="700" sx={{ fontSize: "0.8rem", textTransform: "uppercase" }}>
+                          Patients avec 3 médicaments ou plus
+                        </Typography>
+                        <Tooltip title="Classe définie :PatientPolymedique déduite par le raisonneur HermiT ou règle HAVING (≥ 3 médicaments)">
+                          <InfoOutlinedIcon sx={{ fontSize: 16, color: "#d97706" }} />
+                        </Tooltip>
+                      </Stack>
+                      <Typography variant="h3" fontWeight="800" color="#b45309" sx={{ mt: 0.5 }}>
+                        {stats.polymediques.length}
                       </Typography>
-                      <Typography variant="h4" fontWeight="bold"
-                        color={stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}>
+                      <Typography variant="body2" color="#92400e" sx={{ mt: 0.3 }}>
+                        Dossiers polymédiqués
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 1.5, bgcolor: "#fef3c7", borderRadius: "50%" }}>
+                      <MedicationIcon sx={{ fontSize: 28, color: "#d97706" }} />
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ bgcolor: "#eff6ff", borderLeft: "6px solid #3b82f6", borderRadius: 3 }}>
+                <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Stack direction="row" spacing={0.6} alignItems="center">
+                        <Typography variant="caption" color="#1d4ed8" fontWeight="700" sx={{ fontSize: "0.8rem", textTransform: "uppercase" }}>
+                          Patients avec 2 maladies ou plus
+                        </Typography>
+                        <Tooltip title="Classe définie :PatientAPathologieMultiple déduite par HermiT (≥ 2 pathologies liées)">
+                          <InfoOutlinedIcon sx={{ fontSize: 16, color: "#2563eb" }} />
+                        </Tooltip>
+                      </Stack>
+                      <Typography variant="h3" fontWeight="800" color="#1d4ed8" sx={{ mt: 0.5 }}>
+                        {stats.pathologiesMultiples.length}
+                      </Typography>
+                      <Typography variant="body2" color="#1e40af" sx={{ mt: 0.3 }}>
+                        Comorbidités multiples
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 1.5, bgcolor: "#dbeafe", borderRadius: "50%" }}>
+                      <WarningIcon sx={{ fontSize: 28, color: "#2563eb" }} />
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Card
+                sx={{
+                  bgcolor: stats.interactions.length > 0 ? "#fef2f2" : "#f0fdf4",
+                  borderLeft: `6px solid ${stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}`,
+                  borderRadius: 3,
+                }}
+              >
+                <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        fontWeight="700"
+                        sx={{ fontSize: "0.8rem", textTransform: "uppercase" }}
+                        color={stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}
+                      >
+                        Médicaments à ne pas associer
+                      </Typography>
+                      <Typography
+                        variant="h3"
+                        fontWeight="800"
+                        sx={{ mt: 0.5 }}
+                        color={stats.interactions.length > 0 ? "#dc2626" : "#16a34a"}
+                      >
                         {stats.interactions.length}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">Paires en interaction détectées</Typography>
+                      <Typography variant="body2" color={stats.interactions.length > 0 ? "#991b1b" : "#166534"} sx={{ mt: 0.3 }}>
+                        Associations dangereuses détectées
+                      </Typography>
                     </Box>
-                    <Box sx={{ p: 1, bgcolor: stats.interactions.length > 0 ? "#fee2e2" : "#dcfce7", borderRadius: "50%" }}>
-                      <ReportProblemIcon fontSize="small" sx={{ color: stats.interactions.length > 0 ? "#dc2626" : "#16a34a" }} />
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        bgcolor: stats.interactions.length > 0 ? "#fee2e2" : "#dcfce7",
+                        borderRadius: "50%",
+                      }}
+                    >
+                      <ReportProblemIcon
+                        sx={{
+                          fontSize: 28,
+                          color: stats.interactions.length > 0 ? "#dc2626" : "#16a34a",
+                        }}
+                      />
                     </Box>
                   </Stack>
                 </CardContent>
@@ -148,56 +258,96 @@ export default function Dashboard() {
             </Grid>
           </Grid>
 
+          {/* Alerte si des associations dangereuses existent */}
           {stats.interactions.length > 0 && (
-            <Alert severity="error" icon={<ReportProblemIcon />} sx={{ border: "2px solid #dc2626" }}>
-              <Typography variant="subtitle2" fontWeight="bold" color="error.dark" gutterBottom>
-                Interactions médicamenteuses actives dans la base :
+            <Alert
+              severity="error"
+              icon={<ReportProblemIcon />}
+              sx={{ border: "2px solid #dc2626", borderRadius: 3, p: 2 }}
+            >
+              <Typography variant="subtitle1" fontWeight="700" color="error.dark">
+                Associations dangereuses détectées chez des patients :
               </Typography>
-              {stats.interactions.map((inter, idx) => (
-                <Typography key={idx} variant="body2" sx={{ color: "#991b1b" }}>
-                  • <strong>{inter.nomMedA || inter.medA}</strong> + <strong>{inter.nomMedB || inter.medB}</strong>
-                  {inter.libelle ? ` : ${inter.libelle}` : ""} (Patient : {inter.nom})
-                </Typography>
-              ))}
+              <Stack spacing={0.5} sx={{ mt: 1 }}>
+                {stats.interactions.map((inter, idx) => (
+                  <Typography key={idx} variant="body1" sx={{ color: "#991b1b" }}>
+                    • <strong>{inter.nomMedA || inter.medA}</strong> et <strong>{inter.nomMedB || inter.medB}</strong>
+                    {inter.libelle ? ` : ${inter.libelle}` : ""} — Patient concerné : <strong>{inter.nom}</strong>
+                  </Typography>
+                ))}
+              </Stack>
             </Alert>
           )}
 
+          {/* Tableau des patients à surveiller */}
           {patientsVigilance.length > 0 && (
-            <Paper sx={{ p: 2, borderRadius: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                <Typography variant="subtitle2" fontWeight="bold" color="#065f46">
-                  Patients prioritaires pour revue thérapeutique ({patientsVigilance.length})
-                </Typography>
-                <Chip label="Requête SPARQL HAVING" color="success" size="small" variant="outlined" />
+            <Paper sx={{ p: 2.5, borderRadius: 3, border: "1px solid #e2e8f0" }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Box>
+                  <Typography variant="h6" fontWeight="700" color="#065f46">
+                    Patients à surveiller ({patientsVigilance.length})
+                  </Typography>
+                  <Typography variant="body2" color="#64748b">
+                    Patients nécessitant un contrôle thérapeutique
+                  </Typography>
+                </Box>
+                {modeSoutenance && (
+                  <Chip label="Filtre SPARQL HAVING" color="success" size="small" variant="outlined" />
+                )}
               </Stack>
               <TableContainer>
-                <Table size="small">
+                <Table>
                   <TableHead sx={{ bgcolor: "#f0fdf4" }}>
                     <TableRow>
-                      <TableCell sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>Patient</TableCell>
-                      <TableCell sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>Statut Clinique</TableCell>
-                      <TableCell sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>Médicaments</TableCell>
-                      <TableCell sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>Pathologies</TableCell>
-                      <TableCell align="right" sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>Dossier</TableCell>
+                      <TableCell sx={{ color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+                        Patient
+                      </TableCell>
+                      <TableCell sx={{ color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+                        Situation
+                      </TableCell>
+                      <TableCell sx={{ color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+                        Nb médicaments
+                      </TableCell>
+                      <TableCell sx={{ color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+                        Nb maladies
+                      </TableCell>
+                      <TableCell align="right" sx={{ color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, py: 1.5 }}>
+                        Dossier
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {patientsVigilance.map((p) => (
                       <TableRow key={p.id} hover>
-                        <TableCell sx={{ fontWeight: 600, fontSize: "0.8rem" }}>{p.prenom} {p.nom}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, fontSize: "0.92rem" }}>
+                          {p.prenom} {p.nom}
+                        </TableCell>
                         <TableCell>
-                          <Stack direction="row" spacing={0.5}>
-                            {p.alerte_poly && <Chip size="small" color="warning" label="Polymédiqué" />}
-                            {p.alerte_patho && <Chip size="small" color="info" label="Comorbidités" />}
+                          <Stack direction="row" spacing={0.75}>
+                            {p.alerte_poly && (
+                              <Chip size="small" color="warning" label="3 médicaments ou +" sx={{ fontWeight: 700 }} />
+                            )}
+                            {p.alerte_patho && (
+                              <Chip size="small" color="info" label="Plusieurs maladies" sx={{ fontWeight: 700 }} />
+                            )}
                           </Stack>
                         </TableCell>
-                        <TableCell sx={{ fontSize: "0.8rem" }}>{p.nb_medicaments ?? "—"}</TableCell>
-                        <TableCell sx={{ fontSize: "0.8rem" }}>{p.nb_pathologies ?? "—"}</TableCell>
+                        <TableCell sx={{ fontSize: "0.92rem", fontWeight: 600 }}>
+                          {p.nb_medicaments ?? "—"}
+                        </TableCell>
+                        <TableCell sx={{ fontSize: "0.92rem", fontWeight: 600 }}>
+                          {p.nb_pathologies ?? "—"}
+                        </TableCell>
                         <TableCell align="right">
-                          <Button component={Link} to={`/patients/${p.id}`}
-                            variant="outlined" color="success" size="small"
+                          <Button
+                            component={Link}
+                            to={`/patients/${p.id}`}
+                            variant="outlined"
+                            color="success"
+                            size="small"
                             startIcon={<VisibilityIcon fontSize="small" />}
-                            sx={{ fontSize: "0.75rem", py: 0.25 }}>
+                            sx={{ fontSize: "0.82rem", py: 0.5, px: 1.5, borderRadius: 2 }}
+                          >
                             Consulter
                           </Button>
                         </TableCell>
