@@ -151,15 +151,15 @@ SELECT DISTINCT ?id ?nomPatient ?med ?nomMed ?pathologie ?nomPathologie ?ci ?lib
   ?p a/rdfs:subClassOf* :Patient ; :nom ?nomPatient ;
      :prendMedicament ?m ;
      :souffreDe ?path .
-  ?m :aContreIndication ?ci .
-  ?ci :concernePathologie ?path .
+  ?m :aContreIndication ?ciEntite .
+  ?ciEntite :concernePathologie ?path .
   OPTIONAL { ?m :nomCommercial ?nomMed }
   OPTIONAL { ?path :libelle ?nomPathologie }
-  OPTIONAL { ?ci :libelle ?libelleCI }
+  OPTIONAL { ?ciEntite :libelle ?libelleCI }
   BIND(STRAFTER(STR(?p), "#") AS ?id)
   BIND(STRAFTER(STR(?m), "#") AS ?med)
   BIND(STRAFTER(STR(?path), "#") AS ?pathologie)
-  BIND(STRAFTER(STR(?ci), "#") AS ?ci)
+  BIND(STRAFTER(STR(?ciEntite), "#") AS ?ci)
 } ORDER BY ?nomPatient"""
     return _reponse(fc.select(requete), requete)
 
@@ -341,14 +341,14 @@ SELECT ?id ?nom ?prenom WHERE {{
 SELECT DISTINCT ?med ?nomMed ?pathologie ?nomPathologie ?ci ?libelleCI WHERE {{
   :{id_patient} :prendMedicament ?m ;
                 :souffreDe ?path .
-  ?m :aContreIndication ?ci .
-  ?ci :concernePathologie ?path .
+  ?m :aContreIndication ?ciEntite .
+  ?ciEntite :concernePathologie ?path .
   OPTIONAL {{ ?m :nomCommercial ?nomMed }}
   OPTIONAL {{ ?path :libelle ?nomPathologie }}
-  OPTIONAL {{ ?ci :libelle ?libelleCI }}
+  OPTIONAL {{ ?ciEntite :libelle ?libelleCI }}
   BIND(STRAFTER(STR(?m), "#") AS ?med)
   BIND(STRAFTER(STR(?path), "#") AS ?pathologie)
-  BIND(STRAFTER(STR(?ci), "#") AS ?ci)
+  BIND(STRAFTER(STR(?ciEntite), "#") AS ?ci)
 }}""")
 
 

@@ -232,22 +232,6 @@ export default function PatientDetail() {
           Retour à la liste des patients
         </Button>
 
-        <Button
-          variant="contained"
-          startIcon={<SchoolIcon />}
-          onClick={() => setOpenSparqlLab(true)}
-          sx={{
-            bgcolor: "#065f46",
-            "&:hover": { bgcolor: "#044e39" },
-            fontSize: "0.85rem",
-            fontWeight: 700,
-            textTransform: "none",
-            borderRadius: 2,
-            boxShadow: "0 2px 8px rgba(6,95,70,0.2)",
-          }}
-        >
-          Laboratoire de Requêtes SPARQL (pour la soutenance)
-        </Button>
       </Stack>
 
       {erreur && (
