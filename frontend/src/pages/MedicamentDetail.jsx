@@ -277,7 +277,7 @@ export default function MedicamentDetail() {
             <MedicationIcon sx={{ fontSize: 38 }} />
           </Avatar>
           <Box sx={{ flexGrow: 1 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
               <Typography variant="h5" fontWeight="800" color="#0f172a">
                 {fiche.nomCommercial}
               </Typography>
@@ -305,7 +305,7 @@ export default function MedicamentDetail() {
               )}
             </Stack>
 
-            <Stack direction="row" spacing={2} sx={{ mt: 1, color: "text.secondary" }} flexWrap="wrap">
+            <Stack direction="row" spacing={2} sx={{ mt: 1, color: "text.secondary" , flexWrap: "wrap" }}>
               <Typography variant="body2">
                 <strong>URI RDF :</strong> :{fiche.id}
               </Typography>
@@ -517,7 +517,7 @@ export default function MedicamentDetail() {
               <Chip label={fiche.patients?.length || 0} size="small" sx={{ height: 20 }} />
             </Stack>
             {fiche.patients && fiche.patients.length > 0 ? (
-              <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                 {fiche.patients.map((p) => (
                   <Chip
                     key={p.id}

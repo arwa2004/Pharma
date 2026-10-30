@@ -269,7 +269,7 @@ export default function Assistant() {
             }}
           >
             {/* Ligne Diagnostic NLP */}
-            <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ flexWrap: "wrap" }} gap={1} sx={{ mb: 1.5 }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 {reponse.succes ? (
                   <CheckCircleOutlinedIcon sx={{ color: "#059669", fontSize: 22 }} />

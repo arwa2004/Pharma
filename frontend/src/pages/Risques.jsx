@@ -260,7 +260,7 @@ function OngletAnalyseNLP({ setSparql }) {
               Symptômes identifiés dans l'ontologie :
             </Typography>
             {symptomes.length > 0 ? (
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                 {symptomes.map((symp, index) => (
                   <Chip key={index} label={symp} sx={{ bgcolor: COULEUR_FOND, color: COULEUR, fontWeight: 600 }} />
                 ))}
